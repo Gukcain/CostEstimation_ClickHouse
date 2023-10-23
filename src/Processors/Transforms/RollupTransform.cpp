@@ -23,6 +23,9 @@ GroupByModifierTransform::GroupByModifierTransform(Block header, AggregatingTran
         auto output_aggregator_params = params->params;
         output_aggregator = std::make_unique<Aggregator>(intermediate_header, output_aggregator_params);
     }
+    pv59.header = header;
+    pv59.ptr = params_;
+    pv59.use_nulls = use_nulls_;
 }
 
 void GroupByModifierTransform::consume(Chunk chunk)
@@ -73,7 +76,11 @@ MutableColumnPtr GroupByModifierTransform::getColumnWithDefaults(size_t key, siz
 RollupTransform::RollupTransform(Block header, AggregatingTransformParamsPtr params_, bool use_nulls_)
     : GroupByModifierTransform(std::move(header), params_, use_nulls_)
     , aggregates_mask(getAggregatesMask(params->getHeader(), params->params.aggregates))
-{}
+{
+    pv59.header = header;
+    pv59.ptr = params_;
+    pv59.use_nulls = use_nulls_;
+}
 
 MutableColumnPtr getColumnWithDefaults(Block const & header, size_t key, size_t n)
 {

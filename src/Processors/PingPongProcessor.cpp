@@ -19,8 +19,11 @@ PingPongProcessor::PingPongProcessor(const Block & header, size_t num_ports, Ord
     , aux_out_port(outputs.back())
     , order(order_)
 {
+    
     assert(order == First || order == Second);
-
+    pv72.header = header;
+    pv72.num_ports = num_ports;
+    pv72.order = (order_==Order::First)?"First":"Second";
     port_pairs.resize(num_ports);
 
     auto input_it = inputs.begin();

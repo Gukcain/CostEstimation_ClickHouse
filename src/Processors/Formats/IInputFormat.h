@@ -28,7 +28,7 @@ protected:
 
 public:
     IInputFormat(Block header, ReadBuffer & in_);
-
+    Block i_input_format_header;
     /** In some usecase (hello Kafka) we need to read a lot of tiny streams in exactly the same format.
      * The recreating of parser for each small stream takes too long, so we introduce a method
      * resetParser() which allow to reset the state of parser to continue reading of
@@ -44,6 +44,15 @@ public:
     {
         static const BlockMissingValues none;
         return none;
+    }
+
+    std::vector<Param> getParaList() override{
+        // ParaVal pv73 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(i_input_format_header.rows())));
+        vec.push_back(Param("colomns",std::to_string(i_input_format_header.columns())));
+        return vec;
     }
 
     /// Must be called from ParallelParsingInputFormat after readSuffix

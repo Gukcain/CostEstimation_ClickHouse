@@ -49,6 +49,10 @@ void MergeTreeBackgroundExecutor<Queue>::increaseThreadsAndMaxTasksCount(size_t 
 
     LOG_INFO(log, "Loaded new threads count ({}) and max tasks count ({}) for {}Executor", new_threads_count, new_max_tasks_count, name);
 
+    // 改 05-18
+    new_threads_count = 1;
+    new_max_tasks_count = 1;
+
     pending.setCapacity(new_max_tasks_count);
     active.set_capacity(new_max_tasks_count);
 

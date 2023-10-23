@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Connection.h"
+#include "Processors/Executors/PullingPipelineExecutor.h"
 #include <Interpreters/Context.h>
 #include <QueryPipeline/BlockIO.h>
 #include <IO/TimeoutSetter.h>
@@ -27,9 +28,14 @@ struct LocalQueryState
     /// Streams of blocks, that are processing the query.
     BlockIO io;
     /// Current stream to pull blocks from.
-    std::unique_ptr<PullingAsyncPipelineExecutor> executor;
+
+    // 改 2023-05-07
+    // std::unique_ptr<PullingAsyncPipelineExecutor> executor;
+    // std::unique_ptr<PushingPipelineExecutor> pushing_executor;
+    // std::unique_ptr<PushingAsyncPipelineExecutor> pushing_async_executor;
+    std::unique_ptr<PullingPipelineExecutor> executor;
     std::unique_ptr<PushingPipelineExecutor> pushing_executor;
-    std::unique_ptr<PushingAsyncPipelineExecutor> pushing_async_executor;
+    std::unique_ptr<PushingPipelineExecutor> pushing_async_executor;
     InternalProfileEventsQueuePtr profile_queue;
 
     std::unique_ptr<Exception> exception;
@@ -90,6 +96,8 @@ public:
     const String & getServerDisplayName(const ConnectionTimeouts & timeouts) override;
 
     const String & getDescription() const override { return description; }
+
+    std::vector<std::pair<String, String>> getPasswordComplexityRules() const override { return {}; }
 
     void sendQuery(
         const ConnectionTimeouts & timeouts,

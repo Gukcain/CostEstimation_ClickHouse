@@ -53,33 +53,29 @@ namespace
     class SourceFromNativeStream : public ISource
     {
     public:
-        SourceFromNativeStream(const Block & header, const std::string & path)
-                : ISource(header), file_in(path), compressed_in(file_in),
-                  block_in(std::make_unique<NativeReader>(compressed_in, DBMS_TCP_PROTOCOL_VERSION))
-        {
-        }
+        explicit SourceFromNativeStream(TemporaryFileStream * tmp_stream_)
+            : ISource(tmp_stream_->getHeader())
+            , tmp_stream(tmp_stream_)
+        {}
 
         String getName() const override { return "SourceFromNativeStream"; }
 
         Chunk generate() override
         {
-            if (!block_in)
+            if (!tmp_stream)
                 return {};
 
-            auto block = block_in->read();
+            auto block = tmp_stream->read();
             if (!block)
             {
-                block_in.reset();
+                tmp_stream = nullptr;
                 return {};
             }
-
             return convertToChunk(block);
         }
 
     private:
-        ReadBufferFromFile file_in;
-        CompressedReadBuffer compressed_in;
-        std::unique_ptr<NativeReader> block_in;
+        TemporaryFileStream * tmp_stream;
     };
 }
 
@@ -115,7 +111,29 @@ public:
         , data(std::move(data_))
         , shared_data(std::move(shared_data_))
         , arena(arena_)
-        {}
+        {
+            params = std::move(params_);
+        }
+
+    std::vector<Param> getParaList() override{
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(params->getHeader().rows())));
+        vec.push_back(Param("colomns",std::to_string(params->getHeader().columns())));
+        vec.push_back(Param("enable_auto_progress",std::to_string(CATCSenable)));
+        if(params){
+            String str;
+            for(const auto & key : params.get()->params.keys){
+                str += key;
+            }
+            vec.push_back(Param("keys", str));
+            vec.push_back(Param("keys_size", std::to_string(params.get()->params.keys_size)));
+            vec.push_back(Param("aggregates_size", std::to_string(params.get()->params.aggregates_size)));
+            vec.push_back(Param("max_rows_to_group_by", std::to_string(params.get()->params.max_rows_to_group_by)));
+            vec.push_back(Param("min_free_disk_space", std::to_string(params.get()->params.min_free_disk_space)));
+        }
+        
+        return vec;
+    }
 
     String getName() const override { return "ConvertingAggregatedToChunksSource"; }
 
@@ -136,6 +154,7 @@ protected:
     }
 
 private:
+    bool CATCSenable = false;
     AggregatingTransformParamsPtr params;
     ManyAggregatedDataVariantsPtr data;
     SharedDataPtr shared_data;
@@ -159,6 +178,26 @@ public:
         , params(std::move(params_)), data(std::move(data_)), num_threads(num_threads_) {}
 
     String getName() const override { return "ConvertingAggregatedToChunksTransform"; }
+
+    std::vector<Param> getParaList() override{
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(params->getHeader().rows())));
+        vec.push_back(Param("colomns",std::to_string(params->getHeader().columns())));
+        vec.push_back(Param("num_threads",std::to_string(num_threads)));
+        if(params){
+            String str;
+            for(const auto & key : params.get()->params.keys){
+                str += key;
+            }
+            vec.push_back(Param("keys", str));
+            vec.push_back(Param("keys_size", std::to_string(params.get()->params.keys_size)));
+            vec.push_back(Param("aggregates_size", std::to_string(params.get()->params.aggregates_size)));
+            vec.push_back(Param("max_rows_to_group_by", std::to_string(params.get()->params.max_rows_to_group_by)));
+            vec.push_back(Param("min_free_disk_space", std::to_string(params.get()->params.min_free_disk_space)));
+        }
+        
+        return vec;
+    }
 
     void work() override
     {
@@ -389,6 +428,8 @@ AggregatingTransform::AggregatingTransform(Block header, AggregatingTransformPar
     : AggregatingTransform(std::move(header), std::move(params_)
     , std::make_unique<ManyAggregatedData>(1), 0, 1, 1)
 {
+    pv26.header = std::move(header);
+    pv26.ptr = std::move(params_);
 }
 
 AggregatingTransform::AggregatingTransform(
@@ -407,6 +448,11 @@ AggregatingTransform::AggregatingTransform(
     , max_threads(std::min(many_data->variants.size(), max_threads_))
     , temporary_data_merge_threads(temporary_data_merge_threads_)
 {
+    pv26.header = std::move(header);
+    pv26.ptr = std::move(params_);
+    pv26.current_variant = current_variant;
+    pv26.max_threads = max_threads;
+    pv26.temporary_data_merge_threads = temporary_data_merge_threads_;
 }
 
 AggregatingTransform::~AggregatingTransform() = default;
@@ -564,7 +610,7 @@ void AggregatingTransform::initGenerate()
         elapsed_seconds, src_rows / elapsed_seconds,
         ReadableSize(src_bytes / elapsed_seconds));
 
-    if (params->aggregator.hasTemporaryFiles())
+    if (params->aggregator.hasTemporaryData())
     {
         if (variants.isConvertibleToTwoLevel())
             variants.convertToTwoLevel();
@@ -577,7 +623,7 @@ void AggregatingTransform::initGenerate()
     if (many_data->num_finished.fetch_add(1) + 1 < many_data->variants.size())
         return;
 
-    if (!params->aggregator.hasTemporaryFiles())
+    if (!params->aggregator.hasTemporaryData())
     {
         auto prepared_data = params->aggregator.prepareVariantsToMerge(many_data->variants);
         auto prepared_data_ptr = std::make_shared<ManyAggregatedDataVariants>(std::move(prepared_data));
@@ -604,25 +650,27 @@ void AggregatingTransform::initGenerate()
             }
         }
 
-        const auto & files = params->aggregator.getTemporaryFiles();
-        Pipe pipe;
+        const auto & tmp_data = params->aggregator.getTemporaryData();
 
+        Pipe pipe;
         {
-            auto header = params->aggregator.getHeader(false);
             Pipes pipes;
 
-            for (const auto & file : files.files)
-                pipes.emplace_back(Pipe(std::make_unique<SourceFromNativeStream>(header, file->path())));
+            for (auto * tmp_stream : tmp_data.getStreams())
+                pipes.emplace_back(Pipe(std::make_unique<SourceFromNativeStream>(tmp_stream)));
 
             pipe = Pipe::unitePipes(std::move(pipes));
         }
 
+        size_t num_streams = tmp_data.getStreams().size();
+        size_t compressed_size = tmp_data.getStat().compressed_size;
+        size_t uncompressed_size = tmp_data.getStat().uncompressed_size;
         LOG_DEBUG(
             log,
             "Will merge {} temporary files of size {} compressed, {} uncompressed.",
-            files.files.size(),
-            ReadableSize(files.sum_size_compressed),
-            ReadableSize(files.sum_size_uncompressed));
+            num_streams,
+            ReadableSize(compressed_size),
+            ReadableSize(uncompressed_size));
 
         addMergingAggregatedMemoryEfficientTransform(pipe, params, temporary_data_merge_threads);
 

@@ -5,7 +5,10 @@ namespace DB
 {
 
 MaterializingTransform::MaterializingTransform(const Block & header)
-    : ISimpleTransform(header, materializeBlock(header), false) {}
+    : ISimpleTransform(header, materializeBlock(header), false) {
+        pv49.header = header;
+        pv49.skip_empty_chunks = false;
+    }
 
 void MaterializingTransform::transform(Chunk & chunk)
 {

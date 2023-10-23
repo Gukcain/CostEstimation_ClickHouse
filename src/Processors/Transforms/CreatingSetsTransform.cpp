@@ -31,6 +31,9 @@ CreatingSetsTransform::CreatingSetsTransform(
     , subquery(std::move(subquery_for_set_))
     , network_transfer_limits(std::move(network_transfer_limits_))
 {
+    pv34.header = in_header_;
+    pv34.out_header = out_header_;
+    pv34.network_transfer_limits = network_transfer_limits_;
 }
 
 void CreatingSetsTransform::work()

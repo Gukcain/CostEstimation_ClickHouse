@@ -21,25 +21,20 @@ limitations under the License. */
 #include <Processors/Executors/PullingAsyncPipelineExecutor.h>
 #include <Processors/Executors/PipelineExecutor.h>
 #include <Processors/Transforms/SquashingChunksTransform.h>
-#include <Processors/Transforms/ExpressionTransform.h>
 #include <QueryPipeline/QueryPipelineBuilder.h>
 #include <Common/logger_useful.h>
 #include <Common/typeid_cast.h>
 #include <Common/SipHash.h>
 #include <Common/hex.h>
-#include "QueryPipeline/printPipeline.h"
+#include "Processors/Executors/PullingPipelineExecutor.h"
 
 #include <Storages/LiveView/StorageLiveView.h>
 #include <Storages/LiveView/LiveViewSource.h>
 #include <Storages/LiveView/LiveViewSink.h>
 #include <Storages/LiveView/LiveViewEventsSource.h>
 #include <Storages/LiveView/StorageBlocks.h>
-#include <Storages/LiveView/TemporaryLiveViewCleaner.h>
 
 #include <Storages/StorageFactory.h>
-#include <Parsers/ASTTablesInSelectQuery.h>
-#include <Parsers/ASTSubquery.h>
-#include <Parsers/queryToString.h>
 #include <Interpreters/DatabaseAndTableWithAlias.h>
 #include <Interpreters/DatabaseCatalog.h>
 #include <Interpreters/getTableExpressions.h>
@@ -123,7 +118,9 @@ MergeableBlocksPtr StorageLiveView::collectMergeableBlocks(ContextPtr local_cont
     new_mergeable_blocks->sample_block = builder.getHeader();
 
     auto pipeline = QueryPipelineBuilder::getPipeline(std::move(builder));
-    PullingAsyncPipelineExecutor executor(pipeline);
+    // 改 2023-05-07
+    // PullingAsyncPipelineExecutor executor(pipeline);
+    PullingPipelineExecutor executor(pipeline);
     Block this_block;
 
     while (executor.pull(this_block))
@@ -247,7 +244,9 @@ void StorageLiveView::writeIntoLiveView(
         });
 
         auto pipeline = QueryPipelineBuilder::getPipeline(std::move(builder));
-        PullingAsyncPipelineExecutor executor(pipeline);
+        // 改 05-07
+        // PullingAsyncPipelineExecutor executor(pipeline);
+        PullingPipelineExecutor executor(pipeline);
         Block this_block;
 
         while (executor.pull(this_block))
@@ -310,13 +309,7 @@ StorageLiveView::StorageLiveView(
     auto inner_query_tmp = inner_query->clone();
     select_table_id = extractDependentTable(inner_query_tmp, getContext(), table_id_.table_name, inner_subquery);
 
-    DatabaseCatalog::instance().addDependency(select_table_id, table_id_);
-
-    if (query.live_view_timeout)
-    {
-        is_temporary = true;
-        temporary_live_view_timeout = Seconds {*query.live_view_timeout};
-    }
+    DatabaseCatalog::instance().addViewDependency(select_table_id, table_id_);
 
     if (query.live_view_periodic_refresh)
     {
@@ -392,7 +385,9 @@ bool StorageLiveView::getNewBlocks()
     auto builder = completeQuery(std::move(from));
     auto pipeline = QueryPipelineBuilder::getPipeline(std::move(builder));
 
-    PullingAsyncPipelineExecutor executor(pipeline);
+    // 改 05-07
+    // PullingAsyncPipelineExecutor executor(pipeline);
+    PullingPipelineExecutor executor(pipeline);
     Block block;
     while (executor.pull(block))
     {
@@ -446,19 +441,16 @@ bool StorageLiveView::getNewBlocks()
 void StorageLiveView::checkTableCanBeDropped() const
 {
     auto table_id = getStorageID();
-    Dependencies dependencies = DatabaseCatalog::instance().getDependencies(table_id);
-    if (!dependencies.empty())
+    auto view_ids = DatabaseCatalog::instance().getDependentViews(table_id);
+    if (!view_ids.empty())
     {
-        StorageID dependent_table_id = dependencies.front();
-        throw Exception("Table has dependency " + dependent_table_id.getNameForLogs(), ErrorCodes::TABLE_WAS_NOT_DROPPED);
+        StorageID view_id = *view_ids.begin();
+        throw Exception(ErrorCodes::TABLE_WAS_NOT_DROPPED, "Table has dependency {}", view_id);
     }
 }
 
 void StorageLiveView::startup()
 {
-    if (is_temporary)
-        TemporaryLiveViewCleaner::instance().addView(std::static_pointer_cast<StorageLiveView>(shared_from_this()));
-
     if (is_periodically_refreshed)
         periodic_refresh_task->activate();
 }
@@ -470,7 +462,7 @@ void StorageLiveView::shutdown()
     if (is_periodically_refreshed)
         periodic_refresh_task->deactivate();
 
-    DatabaseCatalog::instance().removeDependency(select_table_id, getStorageID());
+    DatabaseCatalog::instance().removeViewDependency(select_table_id, getStorageID());
 }
 
 StorageLiveView::~StorageLiveView()
@@ -481,7 +473,7 @@ StorageLiveView::~StorageLiveView()
 void StorageLiveView::drop()
 {
     auto table_id = getStorageID();
-    DatabaseCatalog::instance().removeDependency(select_table_id, table_id);
+    DatabaseCatalog::instance().removeViewDependency(select_table_id, table_id);
 
     std::lock_guard lock(mutex);
     is_dropped = true;
@@ -546,7 +538,7 @@ Pipe StorageLiveView::read(
     ContextPtr /*context*/,
     QueryProcessingStage::Enum /*processed_stage*/,
     const size_t /*max_block_size*/,
-    const unsigned /*num_streams*/)
+    const size_t /*num_streams*/)
 {
     std::lock_guard lock(mutex);
 
@@ -571,7 +563,7 @@ Pipe StorageLiveView::watch(
     ContextPtr local_context,
     QueryProcessingStage::Enum & processed_stage,
     size_t /*max_block_size*/,
-    const unsigned /*num_streams*/)
+    const size_t /*num_streams*/)
 {
     ASTWatchQuery & query = typeid_cast<ASTWatchQuery &>(*query_info.query);
 

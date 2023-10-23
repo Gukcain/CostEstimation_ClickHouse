@@ -89,6 +89,10 @@ DistinctSortedTransform::DistinctSortedTransform(
     , limit_hint(limit_hint_)
     , set_size_limits(set_size_limits_)
 {
+    pv37.set_size_limits = set_size_limits_;
+    pv37.header = header;
+    pv37.limit_hint = limit_hint_;
+    pv37.source_columns = column_names;
     if (sort_description.empty())
         throw Exception(ErrorCodes::LOGICAL_ERROR, "DistinctSortedTransform: sort description can't be empty");
 

@@ -34,6 +34,16 @@ MergingSortedTransform::MergingSortedTransform(
         use_average_block_sizes)
     , quiet(quiet_)
 {
+    pv5.header = header;
+    pv5.num_inputs = num_inputs;
+    // pv5.description = description_;
+    pv5.max_block_size = max_block_size;
+    // pv5.input_header = header;
+    // pv5.output_header = header;
+    pv5.have_all_inputs = true;
+    pv5.limit = 0;
+    pv5.quiet = quiet_;
+    pv5.use_average_block_sizes = use_average_block_sizes;
 }
 
 void MergingSortedTransform::onNewInput()

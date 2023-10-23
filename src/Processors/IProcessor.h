@@ -4,12 +4,22 @@
 #include <Processors/Port.h>
 #include <Common/Stopwatch.h>
 
+#include <Interpreters/RandomGenerate.h>
+#include <fstream>
+#include <Parsers/HasQuery.h>
+#include <mutex>
+#include <Processors/Param.h>
+#include <iostream>
+#include <Common/query_coster.h>
+#include "Server/TCPHandler.h"
 
-class EventCounter;
+class EventCounter; 
 
 
 namespace DB
 {
+// extern std::vector<std::vector<std::string>> ParaVector;
+// using namespace std;
 namespace ErrorCodes
 {
     extern const int LOGICAL_ERROR;
@@ -198,6 +208,154 @@ public:
     {
         throw Exception(ErrorCodes::NOT_IMPLEMENTED, "Method 'work' is not implemented for {} processor", getName());
     }
+ 
+    /** 改 05-14 为实际的work提供一个函数接口，在调用实际的work()前后做线程的测量 
+    */
+    void workInterface(){   
+        // bool has_data = false;
+        // for (auto & port : inputs)
+        //     has_data = has_data || port.hasData();
+        // for (auto & port : outputs)
+        //     has_data = has_data || port.hasData();
+        {
+            // std::lock_guard<std::mutex> guard(mutexofall);
+            // std::unique_lock<std::mutex> lock(HasQuery::mutexofall);
+
+            bool has_data = HasQuery::hasquery;
+
+            // double random_test = formData(); 
+            // std::ofstream location_out;
+
+            // if(has_data){
+            //     location_out.open("RandomTest.txt", std::ios::out | std::ios::app); 
+            //     // auto& r = *join.get();
+            //     // std::cout << typeid(r).name() << '\n';
+            //     location_out << random_test <<" :将执行" << getName() << ",线程id为"<<std::this_thread::get_id()<<std::endl;
+            //     location_out.close();
+                
+            // }
+            
+            // work();
+
+            if(has_data){
+                // outputPara();
+                coster::QueryCoster a;
+                // outputPara();        //no
+                // std::vector<std::string> vector1;
+                size_t rows = 0,columns = 0;
+                // a.getTuple(chunk);
+                a.start(rows,columns);
+                work();
+                // outputPara();        //no
+                std::vector<std::string> vector = a.stop();
+                DB::ParaVector.push_back(insertIntoVec(vector));
+                // outputPara2();
+
+            }else{
+                // outputPara2();   //yes
+                work();
+                // outputPara3();   //yes
+            }
+
+            
+            
+            
+
+            // if(has_data){
+                
+            //     // location_out.open("RandomTest.txt", std::ios::out | std::ios::app); 
+            //     // // auto& r = *join.get();
+            //     // // std::cout << typeid(r).name() << '\n';
+            //     // location_out << random_test <<" :执行" << getName() << "完毕,线程id为"<<std::this_thread::get_id()<<std::endl;
+            //     // location_out.close();
+            // }
+            // std::unique_lock<std::mutex> unlock(HasQuery::mutexofall);
+        }
+    }
+
+    static std::vector<std::string> fillParamVec(std::vector<Param> paramlist){
+        std::vector<std::string> res;
+        int flag = 0;
+        for(const Param& param:paramlist){
+            res.push_back(param.val);
+            flag++;
+        }
+        if(flag<10)
+        {
+            for(int i=flag;i<=10;i++)
+            {
+                res.push_back("");
+            }
+        }
+        // DB::ParaVector.push_back(res);
+        return res;
+    }
+
+    // 改 09-02
+    std::vector<std::string> insertIntoVec(std::vector<std::string> vector1){
+        std::vector<std::string> res;
+        res.push_back(getName());
+        res.insert(res.end(),vector1.begin(),vector1.end());
+        int flag = 0;
+        for(const Param& param:getParaList()){
+            res.push_back(param.val);
+            flag++;
+        }
+        if(flag<10)
+        {
+            for(int i=flag;i<=10;i++)
+            {
+                res.push_back("  ");
+            }
+        }
+        // DB::ParaVector.push_back(res);
+        return res;
+    }
+    /**
+    * For getParaList 获取算子参数的接口
+    */
+    virtual std::vector<Param> getParaList(){
+        // throw Exception(ErrorCodes::NOT_IMPLEMENTED, "Method 'getParaList' is not implemented for {} processor", getName());
+        std::vector<Param> vec;
+        return vec;
+    }
+
+    /**
+    * 调用getParaList输出算子参数
+    */
+    void outputPara(){
+        std::ofstream os;
+        os.open("paramList.csv",std::ios::out|std::ios::app);
+        os<<getName()<<",";
+        for(const Param& param:getParaList()){
+            os<<param.val<<",";
+        }
+        os<<std::endl;
+        os.close();
+    }
+    static void outputPara2(){
+        std::ofstream os;
+        os.open("paramList.csv",std::ios::out|std::ios::app);
+        // os<<getName()<<".";
+        // for(const Param& param:getParaList()){
+        //     os<<param.val<<".";
+        // }
+        os<<ParaVector.size()<<std::endl;
+        // os<<std::endl;
+        os.close();
+    }
+    void outputPara3(){
+        std::ofstream os;
+        os.open("paramList.csv",std::ios::out|std::ios::app);
+        os<<getName()<<"|";
+        for(const Param& param:getParaList()){
+            os<<param.val<<"|";
+        }
+        os<<std::endl;
+        os.close();
+    }
+    
+    
 
     /** Executor must call this method when 'prepare' returned Async.
       * This method cannot access any ports. It should use only data that was prepared by 'prepare' method.
@@ -357,8 +515,12 @@ public:
     /// You should zero internal counters in the call, in order to make in idempotent.
     virtual std::optional<ReadProgress> getReadProgress() { return std::nullopt; }
 
+
 protected:
     virtual void onCancel() {}
+    
+    // 改 06-08
+    // std::mutex mutexofall;
 
 private:
     /// For:

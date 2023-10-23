@@ -14,6 +14,9 @@ MergingAggregatedTransform::MergingAggregatedTransform(
     : IAccumulatingTransform(std::move(header_), params_->getHeader())
     , params(std::move(params_)), max_threads(max_threads_)
 {
+    pv54.header = header_;
+    pv54.max_threads = max_threads_;
+    pv54.ptr = params;
 }
 
 void MergingAggregatedTransform::consume(Chunk chunk)

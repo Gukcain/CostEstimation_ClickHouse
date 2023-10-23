@@ -4,6 +4,17 @@
 
 namespace DB
 {
+    // using namespace std;
+// template <typename T>
+class ParaVal12{
+    public:
+        // T value;
+
+        // const Block
+        Block header;
+
+        // ParaVal12();
+};
 
 /// Sink which is returned from Storage::write.
 class SinkToStorage : public ExceptionKeepingTransform
@@ -12,6 +23,16 @@ class SinkToStorage : public ExceptionKeepingTransform
 friend class PartitionedSink;
 
 public:
+    Block sink_to_storage_header;
+    ParaVal12 pv12 = ParaVal12();
+    std::vector<Param> getParaList() override{
+        // ParaVal pv12 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(pv12.header.rows())));
+        vec.push_back(Param("colomns",std::to_string(pv12.header.columns())));
+        return vec;
+    }
     explicit SinkToStorage(const Block & header);
 
     const Block & getHeader() const { return inputs.front().getHeader(); }

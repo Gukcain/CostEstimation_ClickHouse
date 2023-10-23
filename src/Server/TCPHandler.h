@@ -19,10 +19,13 @@
 #include <Formats/NativeReader.h>
 #include <Formats/NativeWriter.h>
 
-#include <Storages/MergeTree/ParallelReplicasReadingCoordinator.h>
-
 #include "IServer.h"
+#include "Processors/QueryPlan/IQueryPlanStep.h"
+#include "Server/TCPProtocolStackData.h"
+#include "Storages/MergeTree/RequestResponse.h"
 #include "base/types.h"
+#include <fstream>
+#include <iostream>
 
 
 namespace CurrentMetrics
@@ -34,6 +37,10 @@ namespace Poco { class Logger; }
 
 namespace DB
 {
+
+extern std::vector<std::vector<std::string>> ParaVector;
+extern Processors processorList;
+extern String Query_String;
 
 class Session;
 struct Settings;
@@ -137,6 +144,7 @@ public:
       * Proxy-forwarded (original client) IP address is used for quota accounting if quota is keyed by forwarded IP.
       */
     TCPHandler(IServer & server_, TCPServer & tcp_server_, const Poco::Net::StreamSocket & socket_, bool parse_proxy_protocol_, std::string server_display_name_);
+    TCPHandler(IServer & server_, TCPServer & tcp_server_, const Poco::Net::StreamSocket & socket_, TCPProtocolStackData & stack_data, std::string server_display_name_);
     ~TCPHandler() override;
 
     void run() override;
@@ -151,12 +159,13 @@ private:
     Poco::Logger * log;
 
     String forwarded_for;
+    String certificate;
 
     String client_name;
     UInt64 client_version_major = 0;
     UInt64 client_version_minor = 0;
     UInt64 client_version_patch = 0;
-    UInt64 client_tcp_protocol_version = 0;
+    UInt32 client_tcp_protocol_version = 0;
     String quota_key;
 
     /// Connection settings, which are extracted from a context.
@@ -211,6 +220,10 @@ private:
     void extractConnectionSettingsFromContext(const ContextPtr & context);
 
     std::unique_ptr<Session> makeSession();
+
+    // 改 09-02
+    void outputCost();
+    void outputTotalTime(std::string query_totaltime);
 
     bool receiveProxyHeader();
     void receiveHello();
@@ -270,6 +283,37 @@ private:
 
     /// This function is called from different threads.
     void updateProgress(const Progress & value);
+
+    static void outputPara(){
+        std::ofstream os;
+        os.open("paramList.csv",std::ios::out|std::ios::app);
+        // os<<getName()<<",";
+        // for(const Param& param:getParaList()){
+        //     os<<param.val<<",";
+        // }
+        os<<"1"<<std::endl;
+        os.close();
+    }
+    static void outputPara2(){
+        std::ofstream os;
+        os.open("paramList.csv",std::ios::out|std::ios::app);
+        // os<<getName()<<".";
+        // for(const Param& param:getParaList()){
+        //     os<<param.val<<".";
+        // }
+        os<<"2"<<std::endl;
+        os.close();
+    }
+    static void outputPara3(){
+        std::ofstream os;
+        os.open("paramList.csv",std::ios::out|std::ios::app);
+        // os<<getName()<<"|";
+        // for(const Param& param:getParaList()){
+        //     os<<param.val<<"|";
+        // }
+        os<<"3"<<std::endl;
+        os.close();
+    }
 };
 
 }

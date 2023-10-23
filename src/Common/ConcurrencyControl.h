@@ -107,11 +107,13 @@ public:
 
         Allocation(ConcurrencyControl & parent_, SlotCount limit_, SlotCount granted_, Waiters::iterator waiter_ = {})
             : parent(parent_)
-            , limit(limit_)
+            , limit(1)
             , allocated(granted_)
             , granted(granted_)
             , waiter(waiter_)
         {
+            SlotCount a = limit_;
+            if(a>0){}
             if (allocated < limit)
                 *waiter = this;
         }
@@ -174,6 +176,9 @@ public:
     // Use `Allocation::tryAcquire()` to acquire allocated slot, before running a thread.
     [[nodiscard]] AllocationPtr allocate(SlotCount min, SlotCount max)
     {
+        // 改 2023-05-01 22：52 加一行
+        max = min = 1; 
+
         if (min > max)
             throw DB::Exception("ConcurrencyControl: invalid allocation requirements", DB::ErrorCodes::LOGICAL_ERROR);
 
@@ -194,6 +199,8 @@ public:
     void setMaxConcurrency(SlotCount value)
     {
         std::unique_lock lock{mutex};
+        // 改 2023-05-01 22：54 加一行
+        value = 1;
         max_concurrency = std::max<SlotCount>(1, value); // never allow max_concurrency to be zero
         schedule(lock);
     }
@@ -261,6 +268,7 @@ private:
     std::mutex mutex;
     Waiters waiters;
     Waiters::iterator cur_waiter; // round-robin pointer
-    SlotCount max_concurrency = Unlimited;
+    // SlotCount max_concurrency = Unlimited;
+    SlotCount max_concurrency = 1;
     SlotCount cur_concurrency = 0;
 };

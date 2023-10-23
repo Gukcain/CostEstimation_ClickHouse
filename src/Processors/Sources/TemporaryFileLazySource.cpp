@@ -1,5 +1,5 @@
 #include <Processors/Sources/TemporaryFileLazySource.h>
-#include <Formats/TemporaryFileStream.h>
+#include <Formats/TemporaryFileStreamLegacy.h>
 
 namespace DB
 {
@@ -10,7 +10,10 @@ TemporaryFileLazySource::TemporaryFileLazySource(const std::string & path_, cons
     : ISource(header_, true)
     , path(path_)
     , done(false)
-{}
+{
+    pv22.path = path_;
+    pv22.header = header_;
+}
 
 Chunk TemporaryFileLazySource::generate()
 {
@@ -18,7 +21,7 @@ Chunk TemporaryFileLazySource::generate()
         return {};
 
     if (!stream)
-        stream = std::make_unique<TemporaryFileStream>(path, header);
+        stream = std::make_unique<TemporaryFileStreamLegacy>(path, header);
 
     auto block = stream->block_in->read();
     if (!block)

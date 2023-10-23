@@ -15,6 +15,7 @@
     #include <Common/Stopwatch.h>
 #endif
 
+
 namespace DB
 {
 
@@ -24,8 +25,8 @@ namespace ErrorCodes
 }
 
 
-PipelineExecutor::PipelineExecutor(Processors & processors, QueryStatus * elem)
-    : process_list_element(elem)
+PipelineExecutor::PipelineExecutor(std::shared_ptr<Processors> & processors, QueryStatusPtr elem)
+    : process_list_element(std::move(elem))
 {
     if (process_list_element)
     {
@@ -41,7 +42,7 @@ PipelineExecutor::PipelineExecutor(Processors & processors, QueryStatus * elem)
         /// If exception was thrown while pipeline initialization, it means that query pipeline was not build correctly.
         /// It is logical error, and we need more information about pipeline.
         WriteBufferFromOwnString buf;
-        printPipeline(processors, buf);
+        printPipeline(*processors, buf);
         buf.finalize();
         exception.addMessage("Query pipeline:\n" + buf.str());
 
@@ -81,7 +82,7 @@ void PipelineExecutor::finish()
 void PipelineExecutor::execute(size_t num_threads)
 {
     checkTimeLimit();
-    if (num_threads < 1)
+    // if (num_threads < 1)
         num_threads = 1;
 
     try
@@ -112,7 +113,6 @@ bool PipelineExecutor::executeStep(std::atomic_bool * yield_flag)
     if (!is_execution_initialized)
     {
         initializeExecution(1);
-
         // Acquire slot until we are done
         single_thread_slot = slots->tryAcquire();
         if (!single_thread_slot)
@@ -256,7 +256,8 @@ void PipelineExecutor::executeStepImpl(size_t thread_num, std::atomic_bool * yie
 #endif
 
             /// Upscale if possible.
-            spawnThreads();
+            // 改 05-20 注释掉
+            // spawnThreads();
 
             /// We have executed single processor. Check if we need to yield execution.
             if (yield_flag && *yield_flag)
@@ -276,6 +277,8 @@ void PipelineExecutor::initializeExecution(size_t num_threads)
 
     /// Allocate CPU slots from concurrency control
     constexpr size_t min_threads = 1;
+    // 改 2023-05-01 21：24
+    num_threads = 1;
     slots = ConcurrencyControl::instance().allocate(min_threads, num_threads);
     size_t use_threads = slots->grantedCount();
 
@@ -305,6 +308,10 @@ void PipelineExecutor::spawnThreads()
         {
             /// ThreadStatus thread_status;
 
+            SCOPE_EXIT_SAFE(
+                if (thread_group)
+                    CurrentThread::detachQueryIfNotDetached();
+            );
             setThreadName("QueryPipelineEx");
 
             if (thread_group)
@@ -343,6 +350,9 @@ void PipelineExecutor::joinThreads()
 
 void PipelineExecutor::executeImpl(size_t num_threads)
 {
+    // 改 2023-05-02
+    num_threads = 1;
+
     initializeExecution(num_threads);
 
     bool finished_flag = false;
@@ -355,6 +365,8 @@ void PipelineExecutor::executeImpl(size_t num_threads)
         }
     );
 
+    // 改 05-20
+    num_threads = 1;
     if (num_threads > 1)
     {
         spawnThreads(); // start at least one thread

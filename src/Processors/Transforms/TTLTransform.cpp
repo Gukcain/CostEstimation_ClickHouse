@@ -27,6 +27,9 @@ TTLTransform::TTLTransform(
     , data_part(data_part_)
     , log(&Poco::Logger::get(storage_.getLogName() + " (TTLTransform)"))
 {
+    pv64.header = header_;
+    pv64.current_time = current_time_;
+    pv64.force = force_;
     auto old_ttl_infos = data_part->ttl_infos;
 
     if (metadata_snapshot_->hasRowsTTL())

@@ -9,7 +9,21 @@
 
 namespace DB
 {
+// using namespace std;
+class ParaVal33{
+    public:
+        // T value;
 
+        // const Block
+        Block header;
+        // SortDescription description;
+        bool skip_empty_chunks = false;
+        Names column_names;
+        size_t num_streams;
+
+        
+        // ParaVal33();
+};
 struct SetWithState : public Set
 {
     using Set::Set;
@@ -50,6 +64,23 @@ using SetWithStatePtr = std::shared_ptr<SetWithState>;
 class CreatingSetsOnTheFlyTransform : public ISimpleTransform
 {
 public:
+    ParaVal33 pv33 = ParaVal33();
+    std::vector<Param> getParaList() override{
+        // ParaVal pv33 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(pv33.header.rows())));
+        vec.push_back(Param("colomns",std::to_string(pv33.header.columns())));
+        vec.push_back(Param("skip_empty_chunks",std::to_string(pv33.skip_empty_chunks)));
+        String str;
+        for(const auto & key : pv33.column_names){
+            str += key;
+        }
+        vec.push_back(Param("column_names",str));
+        vec.push_back(Param("num_streams",std::to_string(pv33.num_streams)));
+        
+        return vec;
+    }
     CreatingSetsOnTheFlyTransform(const Block & header_, const Names & column_names_, size_t num_streams_, SetWithStatePtr set_);
 
     String getName() const override { return "CreatingSetsOnTheFlyTransform"; }
@@ -77,6 +108,23 @@ private:
 class FilterBySetOnTheFlyTransform : public ISimpleTransform
 {
 public:
+    ParaVal33 pv33 = ParaVal33();
+    std::vector<Param> getParaList() override{
+        // ParaVal pv33 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(pv33.header.rows())));
+        vec.push_back(Param("colomns",std::to_string(pv33.header.columns())));
+        vec.push_back(Param("skip_empty_chunks",std::to_string(pv33.skip_empty_chunks)));
+        String str;
+        for(const auto & key : pv33.column_names){
+            str += key;
+        }
+        vec.push_back(Param("column_names",str));
+        // vec.push_back(Param("num_streams",to_string(pv33.num_streams)));
+        
+        return vec;
+    }
     FilterBySetOnTheFlyTransform(const Block & header_, const Names & column_names_, SetWithStatePtr set_);
 
     String getName() const override { return "FilterBySetOnTheFlyTransform"; }

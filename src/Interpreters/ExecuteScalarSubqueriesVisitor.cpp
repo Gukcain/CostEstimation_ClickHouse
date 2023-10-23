@@ -19,6 +19,7 @@
 #include <Parsers/queryToString.h>
 #include <Processors/Executors/PullingAsyncPipelineExecutor.h>
 #include <Common/ProfileEvents.h>
+#include "Processors/Executors/PullingPipelineExecutor.h"
 
 namespace ProfileEvents
 {
@@ -186,7 +187,9 @@ void ExecuteScalarSubqueriesMatcher::visit(const ASTSubquery & subquery, ASTPtr 
         {
             auto io = interpreter->execute();
 
-            PullingAsyncPipelineExecutor executor(io.pipeline);
+            // 改 2023-05-07
+            // PullingAsyncPipelineExecutor executor(io.pipeline);
+            PullingPipelineExecutor executor(io.pipeline);
             io.pipeline.setProgressCallback(data.getContext()->getProgressCallback());
             while (block.rows() == 0 && executor.pull(block));
 

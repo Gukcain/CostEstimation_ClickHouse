@@ -13,6 +13,7 @@ ExpressionTransform::ExpressionTransform(const Block & header_, ExpressionAction
     : ISimpleTransform(header_, transformHeader(header_, expression_->getActionsDAG()), false)
     , expression(std::move(expression_))
 {
+    pv39.header = header_;
 }
 
 void ExpressionTransform::transform(Chunk & chunk)
@@ -29,6 +30,7 @@ ConvertingTransform::ConvertingTransform(const Block & header_, ExpressionAction
     : ExceptionKeepingTransform(header_, ExpressionTransform::transformHeader(header_, expression_->getActionsDAG()))
     , expression(std::move(expression_))
 {
+    pv392.header = header_;
 }
 
 void ConvertingTransform::onConsume(Chunk chunk)
@@ -39,6 +41,7 @@ void ConvertingTransform::onConsume(Chunk chunk)
     expression->execute(block, num_rows);
 
     chunk.setColumns(block.getColumns(), num_rows);
+    chunk.setChunkInfo(chunk.getChunkInfo());
     cur_chunk = std::move(chunk);
 }
 

@@ -1,5 +1,9 @@
+#include <mutex>
 #include <Processors/ISource.h>
 #include <QueryPipeline/StreamLocalLimits.h>
+
+// 改 06-12
+#include <Parsers/HasQuery.h>
 
 
 namespace DB
@@ -17,6 +21,8 @@ ISource::ISource(Block header, bool enable_auto_progress)
     , auto_progress(enable_auto_progress)
     , output(outputs.front())
 {
+    i_source_header = header;
+    enable = enable_auto_progress;
 }
 
 ISource::Status ISource::prepare()

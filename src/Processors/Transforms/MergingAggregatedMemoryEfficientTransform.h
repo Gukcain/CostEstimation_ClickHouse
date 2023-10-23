@@ -1,9 +1,10 @@
 #pragma once
-#include <Processors/IProcessor.h>
+#include <Core/SortDescription.h>
 #include <Interpreters/Aggregator.h>
+#include <Processors/IProcessor.h>
 #include <Processors/ISimpleTransform.h>
-#include <Processors/Transforms/AggregatingTransform.h>
 #include <Processors/ResizeProcessor.h>
+#include <Processors/Transforms/AggregatingTransform.h>
 
 
 namespace DB
@@ -56,9 +57,42 @@ namespace DB
 /// Has several inputs and single output.
 /// Read from inputs chunks with partially aggregated data, group them by bucket number
 ///  and write data from single bucket as single chunk.
+// using namespace std;
+class ParaVal53{
+    public:
+        // T value;
+
+        // const Block
+        Block header;
+        // SortDescription description;
+        size_t num_inputs;
+        AggregatingTransformParamsPtr ptr;
+        
+        // ParaVal53();
+};
 class GroupingAggregatedTransform : public IProcessor
 {
 public:
+    ParaVal53 pv53 = ParaVal53();
+    std::vector<Param> getParaList() override{
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(pv53.header.rows())));
+        vec.push_back(Param("colomns",std::to_string(pv53.header.columns())));
+        vec.push_back(Param("num_inputs", std::to_string(pv53.num_inputs)));
+        if(pv53.ptr){
+            String str;
+            for(const auto & key : pv53.ptr.get()->params.keys){
+                str += key;
+            }
+            vec.push_back(Param("keys", str));
+            vec.push_back(Param("keys_size", std::to_string(pv53.ptr.get()->params.keys_size)));
+            vec.push_back(Param("aggregates_size", std::to_string(pv53.ptr.get()->params.aggregates_size)));
+            vec.push_back(Param("max_rows_to_group_by", std::to_string(pv53.ptr.get()->params.max_rows_to_group_by)));
+            vec.push_back(Param("min_free_disk_space", std::to_string(pv53.ptr.get()->params.min_free_disk_space)));
+        }
+        
+        return vec;
+    }
     GroupingAggregatedTransform(const Block & header_, size_t num_inputs_, AggregatingTransformParamsPtr params_);
     String getName() const override { return "GroupingAggregatedTransform"; }
 
@@ -105,7 +139,8 @@ private:
 class MergingAggregatedBucketTransform : public ISimpleTransform
 {
 public:
-    explicit MergingAggregatedBucketTransform(AggregatingTransformParamsPtr params);
+    explicit MergingAggregatedBucketTransform(
+        AggregatingTransformParamsPtr params, const SortDescription & required_sort_description_ = {});
     String getName() const override { return "MergingAggregatedBucketTransform"; }
 
 protected:
@@ -113,6 +148,7 @@ protected:
 
 private:
     AggregatingTransformParamsPtr params;
+    const SortDescription required_sort_description;
 };
 
 /// Has several inputs and single output.
@@ -142,6 +178,7 @@ struct ChunksToMerge : public ChunkInfo
     std::unique_ptr<Chunks> chunks;
     Int32 bucket_num = -1;
     bool is_overflows = false;
+    UInt64 chunk_num = 0; // chunk number in order of generation, used during memory bound merging to restore chunks order
 };
 
 class Pipe;

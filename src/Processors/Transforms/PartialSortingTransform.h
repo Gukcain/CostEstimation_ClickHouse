@@ -6,12 +6,34 @@
 
 namespace DB
 {
+// using namespace std;
+// template <typename T>
+class ParaVal56{
+    public:
+        // T value;
 
+        // const Block
+        Block header;
+        UInt64 limit = 0;
+
+        // ParaVal56();
+};
 /** Sorts each block individually by the values of the specified columns.
   */
 class PartialSortingTransform : public ISimpleTransform
 {
 public:
+    ParaVal56 pv56 = ParaVal56();
+    std::vector<Param> getParaList() override{
+        // ParaVal pv56 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(pv56.header.rows())));
+        vec.push_back(Param("colomns",std::to_string(pv56.header.columns())));
+        vec.push_back(Param("limit",std::to_string(pv56.limit)));
+        
+        return vec;
+    }
     /// limit - if not 0, then you can sort each block not completely, but only `limit` first rows by order.
     PartialSortingTransform(
         const Block & header_,

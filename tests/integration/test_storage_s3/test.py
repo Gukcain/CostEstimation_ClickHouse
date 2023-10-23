@@ -110,6 +110,20 @@ def started_cluster():
             main_configs=["configs/defaultS3.xml"],
             user_configs=["configs/s3_max_redirects.xml"],
         )
+        cluster.add_instance(
+            "s3_non_default",
+            with_minio=True,
+        )
+        cluster.add_instance(
+            "s3_with_environment_credentials",
+            with_minio=True,
+            env_variables={
+                "AWS_ACCESS_KEY_ID": "minio",
+                "AWS_SECRET_ACCESS_KEY": "minio123",
+            },
+            main_configs=["configs/use_environment_credentials.xml"],
+        )
+
         logging.info("Starting cluster...")
         cluster.start()
         logging.info("Cluster started")
@@ -792,7 +806,7 @@ def test_custom_auth_headers_exclusion(started_cluster):
         print(result)
 
     assert ei.value.returncode == 243
-    assert "Forbidden Error" in ei.value.stderr
+    assert "HTTP response code: 403" in ei.value.stderr
 
 
 def test_infinite_redirect(started_cluster):
@@ -998,6 +1012,9 @@ def test_predefined_connection_configuration(started_cluster):
         "SELECT * FROM s3(s3_conf1, format='CSV', structure='id UInt32')"
     )
     assert result == instance.query("SELECT number FROM numbers(10)")
+
+    result = instance.query_and_get_error("SELECT * FROM s3(no_collection)")
+    assert "There is no named collection `no_collection`" in result
 
 
 result = ""
@@ -1689,3 +1706,38 @@ def test_schema_inference_cache(started_cluster):
 
     test("s3")
     test("url")
+
+
+def test_ast_auth_headers(started_cluster):
+    bucket = started_cluster.minio_restricted_bucket
+    instance = started_cluster.instances["s3_non_default"]  # type: ClickHouseInstance
+    filename = "test.csv"
+
+    result = instance.query_and_get_error(
+        f"select count() from s3('http://resolver:8080/{bucket}/{filename}', 'CSV')"
+    )
+
+    assert "HTTP response code: 403" in result
+    assert "S3_ERROR" in result
+
+    result = instance.query(
+        f"select * from s3('http://resolver:8080/{bucket}/{filename}', 'CSV', headers(Authorization=`Bearer TOKEN`))"
+    )
+
+    assert result.strip() == "1\t2\t3"
+
+
+def test_environment_credentials(started_cluster):
+    filename = "test.csv"
+    bucket = started_cluster.minio_restricted_bucket
+
+    instance = started_cluster.instances["s3_with_environment_credentials"]
+    instance.query(
+        f"insert into function s3('http://{started_cluster.minio_host}:{started_cluster.minio_port}/{bucket}/test_cache3.jsonl') select * from numbers(100) settings s3_truncate_on_insert=1"
+    )
+    assert (
+        "100"
+        == instance.query(
+            f"select count() from s3('http://{started_cluster.minio_host}:{started_cluster.minio_port}/{bucket}/test_cache3.jsonl')"
+        ).strip()
+    )

@@ -848,6 +848,20 @@ MergeJoinTransform::MergeJoinTransform(
         table_join, input_headers, max_block_size)
     , log(&Poco::Logger::get("MergeJoinTransform"))
 {
+    pv51.table_join = table_join;
+    size_t num1 = 0,num2 = 0;
+    for(const Block& b:input_headers){
+        num1 += b.rows();
+        num2 += b.columns();
+    }
+    pv51.input_rows_sum = std::to_string(num1);
+    pv51.input_columns_sum = std::to_string(num2);
+    num1 = 0;
+    num2 = 0;
+    pv51.output_rows = std::to_string(output_header.rows());
+    pv51.output_columns = std::to_string(output_header.columns());
+    pv51.max_block_size = max_block_size;
+    pv51.limit_hint = limit_hint_;
     LOG_TRACE(log, "Use MergeJoinTransform");
 }
 

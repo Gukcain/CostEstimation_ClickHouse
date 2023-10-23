@@ -8,7 +8,22 @@
 
 namespace DB
 {
+// using namespace std;
+// template <typename T>
+class ParaVal25{
+    public:
+        // T value;
 
+        // const Block
+        Block header;
+        // SortDescription description;
+        size_t max_block_size;
+        size_t max_block_bytes;
+        size_t current_variant;
+        AggregatingTransformParamsPtr ptr;
+        
+        // ParaVal25();
+};
 struct InputOrderInfo;
 using InputOrderInfoPtr = std::shared_ptr<const InputOrderInfo>;
 
@@ -22,14 +37,38 @@ struct ChunkInfoWithAllocatedBytes : public ChunkInfo
 class AggregatingInOrderTransform : public IProcessor
 {
 public:
+
+    ParaVal25 pv25 = ParaVal25();
+    std::vector<Param> getParaList() override{
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(pv25.header.rows())));
+        vec.push_back(Param("colomns",std::to_string(pv25.header.columns())));
+        vec.push_back(Param("max_block_size", std::to_string(pv25.max_block_size)));
+        vec.push_back(Param("max_block_bytes", std::to_string(pv25.max_block_bytes)));
+        vec.push_back(Param("current_variant", std::to_string(pv25.current_variant)));
+        if(pv25.ptr){
+            String str;
+            for(const auto & key : pv25.ptr.get()->params.keys){
+                str += key;
+            }
+            vec.push_back(Param("keys", str));
+            vec.push_back(Param("keys_size", std::to_string(pv25.ptr.get()->params.keys_size)));
+            vec.push_back(Param("aggregates_size", std::to_string(pv25.ptr.get()->params.aggregates_size)));
+            vec.push_back(Param("max_rows_to_group_by", std::to_string(pv25.ptr.get()->params.max_rows_to_group_by)));
+            vec.push_back(Param("min_free_disk_space", std::to_string(pv25.ptr.get()->params.min_free_disk_space)));
+        }
+        
+        return vec;
+    }
+
     AggregatingInOrderTransform(Block header, AggregatingTransformParamsPtr params,
-                                InputOrderInfoPtr group_by_info_,
+                                const SortDescription & sort_description_for_merging,
                                 const SortDescription & group_by_description_,
                                 size_t max_block_size_, size_t max_block_bytes_,
                                 ManyAggregatedDataPtr many_data, size_t current_variant);
 
     AggregatingInOrderTransform(Block header, AggregatingTransformParamsPtr params,
-                                InputOrderInfoPtr group_by_info_,
+                                const SortDescription & sort_description_for_merging,
                                 const SortDescription & group_by_description_,
                                 size_t max_block_size_, size_t max_block_bytes_);
 
@@ -58,7 +97,6 @@ private:
     AggregatingTransformParamsPtr params;
     ColumnsMask aggregates_mask;
 
-    InputOrderInfoPtr group_by_info;
     /// For sortBlock()
     SortDescription sort_description;
     SortDescriptionWithPositions group_by_description;

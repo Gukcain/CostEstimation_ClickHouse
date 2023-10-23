@@ -390,7 +390,7 @@ namespace
             case CALL_WITH_STREAM_IO: return "ExecuteQueryWithStreamIO()";
             case CALL_MAX: break;
         }
-        __builtin_unreachable();
+        UNREACHABLE();
     }
 
     bool isInputStreaming(CallType call_type)
@@ -550,7 +550,7 @@ namespace
             case CALL_WITH_STREAM_IO: return std::make_unique<Responder<CALL_WITH_STREAM_IO>>();
             case CALL_MAX: break;
         }
-        __builtin_unreachable();
+        UNREACHABLE();
     }
 
 
@@ -1082,7 +1082,8 @@ namespace
                     NamesAndTypesList columns;
                     for (size_t column_idx : collections::range(external_table.columns_size()))
                     {
-                        const auto & name_and_type = external_table.columns(column_idx);
+                        /// TODO: consider changing protocol
+                        const auto & name_and_type = external_table.columns(static_cast<int>(column_idx));
                         NameAndTypePair column;
                         column.name = name_and_type.name();
                         if (column.name.empty())
@@ -1198,7 +1199,9 @@ namespace
 
         if (io.pipeline.pulling())
         {
-            auto executor = std::make_shared<PullingAsyncPipelineExecutor>(io.pipeline);
+            // 改 2023-05-01
+            // auto executor = std::make_shared<PullingAsyncPipelineExecutor>(io.pipeline);
+            auto executor = std::make_shared<PullingPipelineExecutor>(io.pipeline);
             auto check_for_cancel = [&]
             {
                 if (isQueryCancelled())

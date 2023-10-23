@@ -77,7 +77,7 @@ static bool pollFd(int fd, size_t timeout_milliseconds, int events)
 
     while (true)
     {
-        res = poll(&pfd, 1, timeout_milliseconds);
+        res = poll(&pfd, 1, static_cast<int>(timeout_milliseconds));
 
         if (res < 0)
         {
@@ -238,6 +238,8 @@ private:
 
 namespace
 {
+    // using namespace std;
+    // template <typename T>
     /** A stream, that get child process and sends data using tasks in background threads.
     * For each send data task background thread is created. Send data task must send data to process input pipes.
     * ShellCommandPoolSource receives data from process stdout.
@@ -247,7 +249,17 @@ namespace
     class ShellCommandSource final : public ISource
     {
     public:
-
+    DB::ParaVal19 pv19 = ParaVal19();
+    std::vector<Param> getParaList() override{
+        // ParaVal pv19 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(pv19.header.columns())));
+        vec.push_back(Param("enable_auto_progress",std::to_string(pv19.enable_auto_progress)));
+        vec.push_back(Param("command_read_timeout_milliseconds",std::to_string(pv19.command_read_timeout_milliseconds)));
+        vec.push_back(Param("format",pv19.format));
+        return vec;
+    }
         using SendDataTask = std::function<void(void)>;
 
         ShellCommandSource(
@@ -270,6 +282,9 @@ namespace
             , command_holder(std::move(command_holder_))
             , process_pool(process_pool_)
         {
+            pv19.header = sample_block_;
+            pv19.command_read_timeout_milliseconds = command_read_timeout_milliseconds;
+            pv19.format = format_;
             for (auto && send_data_task : send_data_tasks)
             {
                 send_data_threads.emplace_back([task = std::move(send_data_task), this]()
@@ -429,10 +444,22 @@ namespace
     class SendingChunkHeaderTransform final : public ISimpleTransform
     {
     public:
+        ParaVal19 pv19 = ParaVal19();
+        std::vector<Param> getParaList() override{
+        // ParaVal pv18 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(pv19.header.rows())));
+        vec.push_back(Param("colomns",std::to_string(pv19.header.columns())));
+        vec.push_back(Param("skip_empty_chunks",std::to_string(pv19.skip_empty_chunks)));
+        return vec;
+    }
         SendingChunkHeaderTransform(const Block & header, std::shared_ptr<TimeoutWriteBufferFromFileDescriptor> buffer_)
             : ISimpleTransform(header, header, false)
             , buffer(buffer_)
         {
+            pv19.header = header;
+            pv19.skip_empty_chunks = false;
         }
 
         String getName() const override { return "SendingChunkHeaderTransform"; }
@@ -527,7 +554,7 @@ Pipe ShellCommandSourceCoordinator::createPipe(
         }
         else
         {
-            auto descriptor = i + 2;
+            int descriptor = static_cast<int>(i) + 2;
             auto it = process->write_fds.find(descriptor);
             if (it == process->write_fds.end())
                 throw Exception(ErrorCodes::UNSUPPORTED_METHOD, "Process does not contain descriptor to write {}", descriptor);

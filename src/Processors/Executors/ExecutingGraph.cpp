@@ -10,17 +10,17 @@ namespace ErrorCodes
     extern const int LOGICAL_ERROR;
 }
 
-ExecutingGraph::ExecutingGraph(Processors & processors_, bool profile_processors_)
-    : processors(processors_)
+ExecutingGraph::ExecutingGraph(std::shared_ptr<Processors> processors_, bool profile_processors_)
+    : processors(std::move(processors_))
     , profile_processors(profile_processors_)
 {
-    uint64_t num_processors = processors.size();
+    uint64_t num_processors = processors->size();
     nodes.reserve(num_processors);
 
     /// Create nodes.
     for (uint64_t node = 0; node < num_processors; ++node)
     {
-        IProcessor * proc = processors[node].get();
+        IProcessor * proc = processors->at(node).get();
         processors_map[proc] = node;
         nodes.emplace_back(std::make_unique<Node>(proc, node));
     }
@@ -56,7 +56,7 @@ bool ExecutingGraph::addEdges(uint64_t node)
     /// Add backward edges from input ports.
     auto & inputs = from->getInputs();
     auto from_input = nodes[node]->back_edges.size();
-
+    //当前Processor的Port处理数据完毕后，通过edge到对下一个Processor的对应Port进行处理。
     if (from_input < inputs.size())
     {
         was_edge_added = true;
@@ -66,12 +66,14 @@ bool ExecutingGraph::addEdges(uint64_t node)
             const IProcessor * to = &it->getOutputPort().getProcessor();
             auto output_port_number = to->getOutputPortNumber(&it->getOutputPort());
             Edge edge(0, true, from_input, output_port_number, &nodes[node]->post_updated_input_ports);
+            // 将edge添加到当前node的direct_edges中. 使用move语义.
             auto & added_edge = addEdge(nodes[node]->back_edges, std::move(edge), from, to);
+            // Port中的update_info 和 edge的update_info 指向同一个地方.
             it->setUpdateInfo(&added_edge.update_info);
         }
     }
 
-    /// Add direct edges form output ports.
+    /// Add direct edges from output ports.
     auto & outputs = from->getOutputs();
     auto from_output = nodes[node]->direct_edges.size();
 
@@ -116,10 +118,10 @@ bool ExecutingGraph::expandPipeline(std::stack<uint64_t> & stack, uint64_t pid)
                 processor->cancel();
             return false;
         }
-        processors.insert(processors.end(), new_processors.begin(), new_processors.end());
+        processors->insert(processors->end(), new_processors.begin(), new_processors.end());
     }
 
-    uint64_t num_processors = processors.size();
+    uint64_t num_processors = processors->size();
     std::vector<uint64_t> back_edges_sizes(num_processors, 0);
     std::vector<uint64_t> direct_edge_sizes(num_processors, 0);
 
@@ -133,7 +135,7 @@ bool ExecutingGraph::expandPipeline(std::stack<uint64_t> & stack, uint64_t pid)
 
     while (nodes.size() < num_processors)
     {
-        auto * processor = processors[nodes.size()].get();
+        auto * processor = processors->at(nodes.size()).get();
         if (processors_map.contains(processor))
             throw Exception(ErrorCodes::LOGICAL_ERROR, "Processor {} was already added to pipeline", processor->getName());
 
@@ -393,7 +395,7 @@ bool ExecutingGraph::updateNode(uint64_t pid, Queue & queue, Queue & async_queue
 void ExecutingGraph::cancel()
 {
     std::lock_guard guard(processors_mutex);
-    for (auto & processor : processors)
+    for (auto & processor : *processors)
         processor->cancel();
     cancelled = true;
 }

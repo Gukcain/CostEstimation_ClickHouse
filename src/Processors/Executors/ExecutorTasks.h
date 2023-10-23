@@ -33,7 +33,7 @@ class ExecutorTasks
     PollingQueue async_task_queue;
 
     /// Maximum amount of threads. Constant after initialization, based on `max_threads` setting.
-    size_t num_threads = 0;
+    size_t num_threads = 1;
 
     /// Started thread count (allocated by `ConcurrencyControl`). Can increase during execution up to `num_threads`.
     size_t use_threads = 0;

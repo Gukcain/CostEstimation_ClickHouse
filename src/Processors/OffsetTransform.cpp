@@ -14,6 +14,9 @@ OffsetTransform::OffsetTransform(
     : IProcessor(InputPorts(num_streams, header_), OutputPorts(num_streams, header_))
     , offset(offset_)
 {
+    pv71.header = header_;
+    pv71.num_streams = num_streams;
+    pv71.offset = offset_;
     ports_data.resize(num_streams);
 
     size_t cur_stream = 0;

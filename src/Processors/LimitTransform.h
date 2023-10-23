@@ -6,7 +6,22 @@
 
 namespace DB
 {
+// using namespace std;
+// template <typename T>
+class ParaVal70{
+    public:
+        // T value;
 
+        // const Block
+        Block header;
+        UInt64 limit;
+        UInt64 offset;
+        size_t num_streams = 1;
+        bool always_read_till_end = false;
+        bool with_ties = false;
+
+        // ParaVal70();
+};
 /// Implementation for LIMIT N OFFSET M
 /// This processor support multiple inputs and outputs (the same number).
 /// Each pair of input and output port works independently.
@@ -51,6 +66,20 @@ private:
     bool sortColumnsEqualAt(const ColumnRawPtrs & current_chunk_sort_columns, UInt64 current_chunk_row_num) const;
 
 public:
+    ParaVal70 pv70 = ParaVal70();
+    std::vector<Param> getParaList() override{
+        // ParaVal pv70 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(pv70.header.rows())));
+        vec.push_back(Param("colomns",std::to_string(pv70.header.columns())));
+        vec.push_back(Param("limit",std::to_string(pv70.limit)));
+        vec.push_back(Param("offset",std::to_string(pv70.offset)));
+        vec.push_back(Param("num_streams",std::to_string(pv70.num_streams)));
+        vec.push_back(Param("always_read_till_end",std::to_string(pv70.always_read_till_end)));
+        vec.push_back(Param("with_ties",std::to_string(pv70.with_ties)));
+        return vec;
+    }
     LimitTransform(
         const Block & header_, UInt64 limit_, UInt64 offset_, size_t num_streams = 1,
         bool always_read_till_end_ = false, bool with_ties_ = false,

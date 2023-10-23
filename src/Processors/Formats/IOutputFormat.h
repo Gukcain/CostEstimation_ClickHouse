@@ -26,12 +26,21 @@ public:
     enum PortKind { Main = 0, Totals = 1, Extremes = 2 };
 
     IOutputFormat(const Block & header_, WriteBuffer & out_);
+    Block i_output_format_header;
 
     Status prepare() override;
     void work() override;
 
     /// Flush output buffers if any.
     virtual void flush();
+    std::vector<Param> getParaList() override{
+        // ParaVal pv73 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(i_output_format_header.rows())));
+        vec.push_back(Param("colomns",std::to_string(i_output_format_header.columns())));
+        return vec;
+    }
 
     void setAutoFlush() { auto_flush = true; }
 

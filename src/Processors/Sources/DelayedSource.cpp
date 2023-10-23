@@ -11,6 +11,9 @@ DelayedSource::DelayedSource(const Block & header, Creator processors_creator, b
     : IProcessor({}, OutputPorts(1 + (add_totals_port ? 1 : 0) + (add_extremes_port ? 1 : 0), header))
     , creator(std::move(processors_creator))
 {
+    pv15.header = header;
+    pv15.add_extremes_port = add_extremes_port;
+    pv15.add_totals_port = add_totals_port;
     auto output = outputs.begin();
 
     main = &*output;

@@ -2,9 +2,9 @@
 #include <DataTypes/NestedUtils.h>
 
 namespace DB
-{
+{   
 
-SinkToStorage::SinkToStorage(const Block & header) : ExceptionKeepingTransform(header, header, false) {}
+SinkToStorage::SinkToStorage(const Block & header) : ExceptionKeepingTransform(header, header, false) {pv12.header=header;sink_to_storage_header = header;}
 
 void SinkToStorage::onConsume(Chunk chunk)
 {

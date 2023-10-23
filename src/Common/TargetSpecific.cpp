@@ -1,3 +1,4 @@
+#include <base/defines.h>
 #include <Common/TargetSpecific.h>
 
 #include <Common/CpuId.h>
@@ -20,11 +21,14 @@ UInt32 getSupportedArchs()
         result |= static_cast<UInt32>(TargetArch::AVX512BW);
     if (Cpu::CpuFlagsCache::have_AVX512VBMI)
         result |= static_cast<UInt32>(TargetArch::AVX512VBMI);
+    if (Cpu::CpuFlagsCache::have_AVX512VBMI2)
+        result |= static_cast<UInt32>(TargetArch::AVX512VBMI2);
     return result;
 }
 
 bool isArchSupported(TargetArch arch)
 {
+    // bool has_data = HasQuery::hasquery;
     static UInt32 arches = getSupportedArchs();
     return arch == TargetArch::Default || (arches & static_cast<UInt32>(arch));
 }
@@ -38,11 +42,12 @@ String toString(TargetArch arch)
         case TargetArch::AVX:     return "avx";
         case TargetArch::AVX2:    return "avx2";
         case TargetArch::AVX512F: return "avx512f";
-        case TargetArch::AVX512BW: return "avx512bw";
-        case TargetArch::AVX512VBMI: return "avx512vbmi";
+        case TargetArch::AVX512BW:    return "avx512bw";
+        case TargetArch::AVX512VBMI:  return "avx512vbmi";
+        case TargetArch::AVX512VBMI2: return "avx512vbmi";
     }
 
-    __builtin_unreachable();
+    UNREACHABLE();
 }
 
 }

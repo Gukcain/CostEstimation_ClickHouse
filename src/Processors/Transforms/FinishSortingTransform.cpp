@@ -29,6 +29,10 @@ FinishSortingTransform::FinishSortingTransform(
     bool increase_sort_description_compile_attempts)
     : SortingTransform(header, description_to_sort_, max_merged_block_size_, limit_, increase_sort_description_compile_attempts)
 {
+    pv44.header = header;
+    pv44.increase_sort_description_compile_attempts = increase_sort_description_compile_attempts;
+    pv44.limit = limit_;
+    pv44.max_merged_block_size = max_merged_block_size_;
     /// Check for sanity non-modified descriptions
     if (!isPrefix(description_sorted_, description_to_sort_))
         throw Exception("Can't finish sorting. SortDescription of already sorted stream is not prefix of "

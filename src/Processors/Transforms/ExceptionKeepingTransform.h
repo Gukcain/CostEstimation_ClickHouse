@@ -3,7 +3,18 @@
 
 namespace DB
 {
+// using namespace std;
+class ParaValx{
+    public:
+        // T value;
 
+        // const Block
+        Block in_header;
+        Block out_header;
+        bool ignore_on_start_and_finish = true;
+        
+        // ParaValx();
+};
 
 class ThreadStatus;
 
@@ -55,6 +66,19 @@ protected:
     virtual void onException() {}
 
 public:
+    ParaValx pv_x = ParaValx();
+    std::vector<Param> getParaList() override{
+        // ParaVal pv = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows_in",std::to_string(pv_x.in_header.rows())));
+        vec.push_back(Param("colomns_In",std::to_string(pv_x.in_header.columns())));
+        vec.push_back(Param("rows_out",std::to_string(pv_x.out_header.rows())));
+        vec.push_back(Param("colomns_out",std::to_string(pv_x.out_header.columns())));
+        vec.push_back(Param("ignore_on_start_and_finish",std::to_string(pv_x.ignore_on_start_and_finish)));
+        
+        return vec;
+    }
     ExceptionKeepingTransform(const Block & in_header, const Block & out_header, bool ignore_on_start_and_finish_ = true);
 
     Status prepare() override;

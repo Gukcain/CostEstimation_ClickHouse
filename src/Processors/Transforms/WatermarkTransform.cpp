@@ -18,6 +18,9 @@ WatermarkTransform::WatermarkTransform(
     , window_column_name(window_column_name_)
     , lateness_upper_bound(lateness_upper_bound_)
 {
+    pv65.header = header_;
+    pv65.window_column_name = window_column_name_;
+    pv65.lateness_upper_bound = lateness_upper_bound_;
 }
 
 WatermarkTransform::~WatermarkTransform()

@@ -4,11 +4,6 @@
 namespace DB
 {
 
-namespace ErrorCodes
-{
-    extern const int LOGICAL_ERROR;
-}
-
 Block ArrayJoinTransform::transformHeader(Block header, const ArrayJoinActionPtr & array_join)
 {
     array_join->execute(header);
@@ -22,6 +17,8 @@ ArrayJoinTransform::ArrayJoinTransform(
     : ISimpleTransform(header_, transformHeader(header_, array_join_), false)
     , array_join(std::move(array_join_))
 {
+    pv27.header = header_;
+    pv27.skip_empty_chunks = false;
     /// TODO
 //    if (on_totals_)
 //        throw Exception("ARRAY JOIN is not supported for totals", ErrorCodes::LOGICAL_ERROR);

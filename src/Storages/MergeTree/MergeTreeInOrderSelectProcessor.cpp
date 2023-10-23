@@ -1,4 +1,6 @@
+#include <mutex>
 #include <Storages/MergeTree/MergeTreeInOrderSelectProcessor.h>
+#include <Parsers/HasQuery.h>
 
 namespace DB
 {
@@ -8,9 +10,11 @@ namespace ErrorCodes
     extern const int MEMORY_LIMIT_EXCEEDED;
 }
 
-bool MergeTreeInOrderSelectProcessor::getNewTaskImpl()
+bool MergeTreeInOrderSelectAlgorithm::getNewTaskImpl()
 try
 {
+    // 改 06-12 添加
+    // std::unique_lock<std::mutex> lock(HasQuery::mutexofall); // 改 08-31 注释
     if (all_mark_ranges.empty())
         return false;
 
@@ -38,6 +42,8 @@ try
         prewhere_info && prewhere_info->remove_prewhere_column,
         std::move(size_predictor));
 
+    // 改 06-12
+    // std::unique_lock<std::mutex> unlock(HasQuery::mutexofall);   // 改 08-31 注释
     return true;
 }
 catch (...)

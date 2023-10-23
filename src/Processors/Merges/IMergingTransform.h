@@ -3,6 +3,8 @@
 #include <Processors/Merges/Algorithms/IMergingAlgorithm.h>
 #include <Processors/IProcessor.h>
 #include <Common/Stopwatch.h>
+#include "Core/Types.h"
+#include "base/types.h"
 
 namespace DB
 {
@@ -87,6 +89,11 @@ public:
         : IMergingTransformBase(num_inputs, input_header, output_header, have_all_inputs_, limit_hint_)
         , algorithm(std::forward<Args>(args) ...)
     {
+        // numinputs = num_inputs;
+        // in3 = input_header;
+        // out3 = output_header;
+        // have_allinputs = have_all_inputs_;
+        // limithint = limit_hint_;
     }
 
     template <typename ... Args>
@@ -101,7 +108,33 @@ public:
         , empty_chunk_on_finish(empty_chunk_on_finish_)
         , algorithm(std::forward<Args>(args) ...)
     {
+        // numinputs = num_inputs;
+        // in3 = input_header;
+        // out3 = output_header;
+        // have_allinputs = have_all_inputs_;
+        // limithint = limit_hint_;
     }
+
+    // std::vector<Param> getParaList() override{
+    //     // ParaVal pv = ParaVal();
+    //     // vec.push_back(TestC("header", header));
+    //     std::vector<Param> vec;
+    //     if(in3){
+    //         vec.push_back(Param("rows_input",std::to_string(in3.rows())));
+    //         vec.push_back(Param("colomns_input",std::to_string(in3.columns())));
+    //     }
+    //     vec.push_back(Param("rows_output",std::to_string(out3.rows())));
+    //     vec.push_back(Param("colomns_output",std::to_string(out3.columns())));
+    //     if(numinputs!=(UInt64)-1){
+    //         vec.push_back(Param("num_inputs", std::to_string(numinputs)));
+    //     }
+        
+    //     vec.push_back(Param("max_block_size", std::to_string(max_blocksize)));
+    //     vec.push_back(Param("have_all_inputs", std::to_string(have_allinputs)));
+    //     vec.push_back(Param("limit_hint", std::to_string(limithint)));
+    //     vec.push_back(Param("empty_chunk_on_finish", std::to_string(empty_chunk_on_finish)));
+    //     return vec;
+    // }
 
     void work() override
     {
@@ -147,6 +180,15 @@ public:
 protected:
     /// Call `consume` with empty chunk when there is no more data.
     bool empty_chunk_on_finish = false;
+    // Block in3;
+    // Block out3;
+    // size_t numinputs = -1;
+    //     // SortDescription description;
+    // size_t max_blocksize;
+    //     // Block & input_header;
+    //     // Block & output_header;
+    // bool have_allinputs = true;
+    // UInt64 limithint = 0;
 
     Algorithm algorithm;
 

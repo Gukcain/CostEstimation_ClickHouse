@@ -15,6 +15,15 @@ public:
     {}
 
     String getName() const override { return "PullingOutputFormat"; }
+    std::vector<Param> getParaList() override{
+        // ParaVal pv73 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(i_output_format_header.rows())));
+        vec.push_back(Param("colomns",std::to_string(i_output_format_header.columns())));
+        vec.push_back(Param("has_data_flag",std::to_string(has_data_flag)));
+        return vec;
+    }
 
     Chunk getChunk();
     Chunk getTotals();

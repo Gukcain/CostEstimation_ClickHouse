@@ -84,6 +84,54 @@ bool PullingPipelineExecutor::pull(Block & block)
 
     return true;
 }
+// 下面两个函数是修改的 2023-04-16 19：50
+bool PullingPipelineExecutor::pull(Chunk & chunk, uint64_t milliseconds){
+    if (!executor)
+    {
+        executor = std::make_shared<PipelineExecutor>(pipeline.processors, pipeline.process_list_element);
+        executor->setReadProgressCallback(pipeline.getReadProgressCallback());
+
+        // 随便写的一行 实际是无用的参数和代码 用来保持接口一致的
+        executor->neverused = milliseconds;
+    }
+
+    if (!executor->checkTimeLimitSoft())
+        return false;
+
+    if (!executor->executeStep(&has_data_flag))
+        return false;
+
+    chunk = pulling_format->getChunk();
+
+    return true;
+};
+bool PullingPipelineExecutor::pull(Block & block, uint64_t milliseconds){
+    Chunk chunk;
+
+    if (!pull(chunk))
+        return false;
+
+    if (!chunk)
+    {
+        /// In case if timeout exceeded.
+        block.clear();
+        return true;
+    }
+
+    block = pulling_format->getPort(IOutputFormat::PortKind::Main).getHeader().cloneWithColumns(chunk.detachColumns());
+    if (auto chunk_info = chunk.getChunkInfo())
+    {
+        if (const auto * agg_info = typeid_cast<const AggregatedChunkInfo *>(chunk_info.get()))
+        {
+            block.info.bucket_num = agg_info->bucket_num;
+            block.info.is_overflows = agg_info->is_overflows;
+        }
+    }
+    // 随便写的一行 实际是无用的参数和代码 用来保持接口一致的
+    executor->neverused = milliseconds;
+
+    return true;
+};
 
 void PullingPipelineExecutor::cancel()
 {

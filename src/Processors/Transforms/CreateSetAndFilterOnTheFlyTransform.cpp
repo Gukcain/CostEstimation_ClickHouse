@@ -56,6 +56,9 @@ CreatingSetsOnTheFlyTransform::CreatingSetsOnTheFlyTransform(
     , num_streams(num_streams_)
     , set(set_)
 {
+    pv33.header = header_;
+    pv33.column_names = column_names_;
+    pv33.num_streams = num_streams_;
 }
 
 IProcessor::Status CreatingSetsOnTheFlyTransform::prepare()
@@ -129,6 +132,8 @@ FilterBySetOnTheFlyTransform::FilterBySetOnTheFlyTransform(const Block & header_
     , key_column_indices(getColumnIndices(inputs.front().getHeader(), column_names))
     , set(set_)
 {
+    pv33.header = header_;
+    pv33.column_names = column_names_;
     const auto & header = inputs.front().getHeader();
     for (size_t idx : key_column_indices)
         key_sample_block.insert(header.getByPosition(idx));

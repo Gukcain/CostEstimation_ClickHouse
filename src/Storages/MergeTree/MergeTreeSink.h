@@ -2,6 +2,7 @@
 
 #include <Processors/Sinks/SinkToStorage.h>
 #include <Storages/StorageInMemoryMetadata.h>
+#include <Storages/StorageMergeTree.h>
 
 
 namespace DB
@@ -24,6 +25,18 @@ public:
 
     ~MergeTreeSink() override;
 
+    std::vector<Param> getParaList() override{
+        // ParaVal pv73 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(sink_to_storage_header.rows())));
+        vec.push_back(Param("colomns",std::to_string(sink_to_storage_header.columns())));
+        vec.push_back(Param("Merging_mode",storage.getName()));
+        // vec.push_back(Param("colomns",std::to_string(pv73.header.columns())));
+        vec.push_back(Param("max_parts_per_block",std::to_string(max_parts_per_block)));
+        // vec.push_back(Param("num_outputs",std::to_string(pv73.num_outputs)));
+        return vec;
+    }
     String getName() const override { return "MergeTreeSink"; }
     void consume(Chunk chunk) override;
     void onStart() override;

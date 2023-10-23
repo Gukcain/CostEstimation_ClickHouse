@@ -5,9 +5,11 @@
 namespace DB
 {
 
-SourceFromSingleChunk::SourceFromSingleChunk(Block header, Chunk chunk_) : ISource(std::move(header)), chunk(std::move(chunk_)) {}
+SourceFromSingleChunk::SourceFromSingleChunk(Block header, Chunk chunk_) : ISource(std::move(header)), chunk(std::move(chunk_)) {pv20.header = header;pv20.chunk=chunk_.clone();}
 SourceFromSingleChunk::SourceFromSingleChunk(Block data) : ISource(data.cloneEmpty()), chunk(data.getColumns(), data.rows())
 {
+    pv20.header = data.cloneEmpty();
+    pv20.chunk = Chunk(data.getColumns(), data.rows());
     const auto & sample = getPort().getHeader();
     bool has_aggregate_functions = false;
     for (auto & type : sample.getDataTypes())

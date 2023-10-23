@@ -14,6 +14,9 @@ CubeTransform::CubeTransform(Block header, AggregatingTransformParamsPtr params_
     : GroupByModifierTransform(std::move(header), params_, use_nulls_)
     , aggregates_mask(getAggregatesMask(params->getHeader(), params->params.aggregates))
 {
+    // 改 08-24
+    pv35.header = header;
+    pv35.use_nulls = use_nulls_;
     if (keys.size() >= 8 * sizeof(mask))
         throw Exception("Too many keys are used for CubeTransform.", ErrorCodes::LOGICAL_ERROR);
 }

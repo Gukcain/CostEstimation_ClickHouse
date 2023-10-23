@@ -46,6 +46,19 @@ public:
 
     void resetParser() override;
 
+    std::vector<Param> getParaList() override{
+        // ParaVal pv73 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(i_input_format_header.rows())));
+        vec.push_back(Param("colomns",std::to_string(i_input_format_header.columns())));
+        vec.push_back(Param("total_rows",std::to_string(getTotalRows())));
+        vec.push_back(Param("max_block_size",std::to_string(params.max_block_size)));
+        vec.push_back(Param("max_execution_time_us",std::to_string(params.max_execution_time.totalMicroseconds())));
+        // vec.push_back(Param("max_block_size",std::to_string(params.max_block_size)));
+        return vec;
+    }
+
 protected:
     /** Read next row and append it to the columns.
       * If no more rows - return false.

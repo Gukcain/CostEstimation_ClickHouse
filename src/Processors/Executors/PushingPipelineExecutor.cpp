@@ -19,7 +19,17 @@ public:
     explicit PushingSource(const Block & header, std::atomic_bool & input_wait_flag_)
         : ISource(header)
         , input_wait_flag(input_wait_flag_)
-    {}
+    {pushingheader = std::move(header);}
+
+    std::vector<Param> getParaList() override{
+        // ParaVal pv69 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(pushingheader.rows())));
+        vec.push_back(Param("colomns",std::to_string(pushingheader.columns())));
+        vec.push_back(Param("input_wait_flag",std::to_string(input_wait_flag)));
+        return vec;
+    }
 
     String getName() const override { return "PushingSource"; }
 
@@ -46,6 +56,7 @@ protected:
     }
 
 private:
+    Block pushingheader;
     Chunk data;
     std::atomic_bool & input_wait_flag;
 };
@@ -58,7 +69,7 @@ PushingPipelineExecutor::PushingPipelineExecutor(QueryPipeline & pipeline_) : pi
 
     pushing_source = std::make_shared<PushingSource>(pipeline.input->getHeader(), input_wait_flag);
     connect(pushing_source->getPort(), *pipeline.input);
-    pipeline.processors.emplace_back(pushing_source);
+    pipeline.processors->emplace_back(pushing_source);
 }
 
 PushingPipelineExecutor::~PushingPipelineExecutor()

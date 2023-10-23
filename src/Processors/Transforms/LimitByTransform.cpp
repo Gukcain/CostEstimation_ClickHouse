@@ -21,6 +21,10 @@ LimitByTransform::LimitByTransform(const Block & header, UInt64 group_length_, U
         if (!(column && isColumnConst(*column)))
             key_positions.emplace_back(position);
     }
+    pv47.header = header;
+    pv47.columns = columns;
+    pv47.group_length = group_length_;
+    pv47.group_offset = group_offset_;
 }
 
 void LimitByTransform::transform(Chunk & chunk)

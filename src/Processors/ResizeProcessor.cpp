@@ -8,6 +8,10 @@ namespace ErrorCodes
     extern const int LOGICAL_ERROR;
 }
 
+// ParaVal73::ParaVal73(){
+
+// }
+
 ResizeProcessor::Status ResizeProcessor::prepare()
 {
     bool is_first_output = true;

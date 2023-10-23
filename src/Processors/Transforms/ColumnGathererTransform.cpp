@@ -131,6 +131,9 @@ ColumnGathererTransform::ColumnGathererTransform(
         num_inputs, row_sources_buf_, block_preferred_size_)
     , log(&Poco::Logger::get("ColumnGathererStream"))
 {
+    pv30.header = header;
+    pv30.block_preferred_size = block_preferred_size_;
+    pv30.num_inputs = num_inputs;
     if (header.columns() != 1)
         throw Exception(
             "Header should have 1 column, but contains " + toString(header.columns()),

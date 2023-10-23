@@ -12,6 +12,7 @@
 #include <boost/core/noncopyable.hpp>
 
 #include <Common/PODArray.h>
+#include "Interpreters/IJoin.h"
 #include <Core/SortCursor.h>
 #include <Core/SortDescription.h>
 #include <IO/ReadBuffer.h>
@@ -24,7 +25,7 @@ namespace Poco { class Logger; }
 
 namespace DB
 {
-
+// using namespace std;
 class IJoin;
 using JoinPtr = std::shared_ptr<IJoin>;
 
@@ -279,11 +280,57 @@ private:
     Poco::Logger * log;
 };
 
+class ParaVal51{
+    public:
+        // T value;
+
+        // const Block
+        String input_rows_sum;
+        String input_columns_sum;
+        String output_rows;
+        String output_columns;
+        JoinPtr table_join;
+        size_t max_block_size;
+        UInt64 limit_hint = 0;
+        bool have_all_inputs= true;
+        bool empty_chunk_on_finish = true;
+        
+        // ParaVal51();
+};
+
 class MergeJoinTransform final : public IMergingTransform<MergeJoinAlgorithm>
 {
     using Base = IMergingTransform<MergeJoinAlgorithm>;
 
 public:
+    ParaVal51 pv51 = ParaVal51();
+    std::vector<Param> getParaList() override{
+        // ParaVal pv51 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("input_rows_sum",pv51.input_rows_sum));
+        vec.push_back(Param("input_columns_sum",pv51.input_columns_sum));
+        vec.push_back(Param("output_rows",pv51.output_rows));
+        vec.push_back(Param("output_columns",pv51.output_columns));
+        vec.push_back(Param("empty_chunk_on_finish",std::to_string(pv51.empty_chunk_on_finish)));
+        vec.push_back(Param("have_all_inputs", std::to_string(pv51.have_all_inputs)));
+        vec.push_back(Param("max_block_size",std::to_string(pv51.max_block_size)));
+        if(pv51.table_join){
+            vec.push_back(Param("total_row_count_in_memory",std::to_string(pv51.table_join.get()->getTotalRowCount())));
+            vec.push_back(Param("total_byte_count_in_memory",std::to_string(pv51.table_join.get()->getTotalByteCount())));
+            String str;
+            if(pv51.table_join.get()->pipelineType()==JoinPipelineType::FilledRight){
+                str = "FilledRight";
+            }else if(pv51.table_join.get()->pipelineType()==JoinPipelineType::FillRightFirst){
+                str = "FillRightFirst";
+            }else if(pv51.table_join.get()->pipelineType()==JoinPipelineType::YShaped){
+                str = "YShaped";
+            }
+            vec.push_back(Param("joinPipelineType",str));
+        }
+        
+        return vec;
+    }
     MergeJoinTransform(
         JoinPtr table_join,
         const Blocks & input_headers,

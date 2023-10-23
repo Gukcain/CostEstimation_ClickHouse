@@ -1,1 +1,9 @@
-../../../tests/config/config.d/query_masking_rules.xml
+<!-- Config for test server -->
+<clickhouse>
+    <query_masking_rules>
+        <rule>
+            <regexp>TOPSECRET.TOPSECRET</regexp>
+            <replace>[hidden]</replace>
+        </rule>
+    </query_masking_rules>
+</clickhouse>

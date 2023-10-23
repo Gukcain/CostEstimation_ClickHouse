@@ -46,8 +46,8 @@ public:
     size_t getTotalRowCount() const override;
     size_t getTotalByteCount() const override;
     bool alwaysReturnsEmptySet() const override;
-    bool supportParallelJoin() const override { return true; }
-    std::shared_ptr<NotJoinedBlocks>
+    bool supportParallelJoin() const override { /* 改 08-07 */ /*原return true;*/ /*return false;*//*改 08-30*/return true;}
+    IBlocksStreamPtr
     getNonJoinedBlocks(const Block & left_sample_block, const Block & result_sample_block, UInt64 max_block_size) const override;
 
 private:

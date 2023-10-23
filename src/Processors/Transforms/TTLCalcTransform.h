@@ -10,10 +10,35 @@
 
 namespace DB
 {
+// using namespace std;
+// template <typename T>
+class ParaVal63{
+    public:
+        // T value;
 
+        // const Block
+        Block header;
+        // bool enable_auto_progress = true;
+        time_t current_time;
+        bool force;
+
+        // ParaVal63();
+};
 class TTLCalcTransform : public IAccumulatingTransform
 {
 public:
+    ParaVal63 pv63 = ParaVal63();
+    std::vector<Param> getParaList() override{
+        // ParaVal pv63 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(pv63.header.rows())));
+        vec.push_back(Param("colomns",std::to_string(pv63.header.columns())));
+        vec.push_back(Param("current_time",std::to_string(pv63.current_time)));
+        vec.push_back(Param("force",std::to_string(pv63.force)));
+        
+        return vec;
+    }
     TTLCalcTransform(
         const Block & header_,
         const MergeTreeData & storage_,

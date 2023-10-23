@@ -31,7 +31,9 @@ namespace CurrentMetrics
 
 template <typename Thread>
 ThreadPoolImpl<Thread>::ThreadPoolImpl()
-    : ThreadPoolImpl(getNumberOfPhysicalCPUCores())
+    // 改 05-01
+    // : ThreadPoolImpl(getNumberOfPhysicalCPUCores())
+        : ThreadPoolImpl(1)
 {
 }
 
@@ -87,7 +89,7 @@ void ThreadPoolImpl<Thread>::setQueueSize(size_t value)
 
 template <typename Thread>
 template <typename ReturnType>
-ReturnType ThreadPoolImpl<Thread>::scheduleImpl(Job job, int priority, std::optional<uint64_t> wait_microseconds, bool propagate_opentelemetry_tracing_context)
+ReturnType ThreadPoolImpl<Thread>::scheduleImpl(Job job, ssize_t priority, std::optional<uint64_t> wait_microseconds, bool propagate_opentelemetry_tracing_context)
 {
     auto on_error = [&](const std::string & reason)
     {
@@ -127,6 +129,9 @@ ReturnType ThreadPoolImpl<Thread>::scheduleImpl(Job job, int priority, std::opti
         /// Because if an exception would be thrown, we won't notify a thread about job occurrence.
 
         /// Check if there are enough threads to process job.
+        // 改 2023-05-02
+        // if (threads.size() < 1)
+        // 首先判断线程队列中已有的线程数量是否超过线程池设置的参数最大线程数量
         if (threads.size() < std::min(max_threads, scheduled_jobs + 1))
         {
             try
@@ -141,6 +146,7 @@ ReturnType ThreadPoolImpl<Thread>::scheduleImpl(Job job, int priority, std::opti
 
             try
             {
+                // 如果没有超过，那么新启动一个新worker线程
                 threads.front() = Thread([this, it = threads.begin()] { worker(it); });
             }
             catch (...)
@@ -150,6 +156,8 @@ ReturnType ThreadPoolImpl<Thread>::scheduleImpl(Job job, int priority, std::opti
             }
         }
 
+        // 并将job存到任务队列里
+        // 如果超过则不会启动新的worker线程，只是将job放到任务队列
         jobs.emplace(std::move(job),
                      priority,
                      /// Tracing context on this thread is used as parent context for the sub-thread that runs the job
@@ -163,19 +171,19 @@ ReturnType ThreadPoolImpl<Thread>::scheduleImpl(Job job, int priority, std::opti
 }
 
 template <typename Thread>
-void ThreadPoolImpl<Thread>::scheduleOrThrowOnError(Job job, int priority)
+void ThreadPoolImpl<Thread>::scheduleOrThrowOnError(Job job, ssize_t priority)
 {
     scheduleImpl<void>(std::move(job), priority, std::nullopt);
 }
 
 template <typename Thread>
-bool ThreadPoolImpl<Thread>::trySchedule(Job job, int priority, uint64_t wait_microseconds) noexcept
+bool ThreadPoolImpl<Thread>::trySchedule(Job job, ssize_t priority, uint64_t wait_microseconds) noexcept
 {
     return scheduleImpl<bool>(std::move(job), priority, wait_microseconds);
 }
 
 template <typename Thread>
-void ThreadPoolImpl<Thread>::scheduleOrThrow(Job job, int priority, uint64_t wait_microseconds, bool propagate_opentelemetry_tracing_context)
+void ThreadPoolImpl<Thread>::scheduleOrThrow(Job job, ssize_t priority, uint64_t wait_microseconds, bool propagate_opentelemetry_tracing_context)
 {
     scheduleImpl<void>(std::move(job), priority, wait_microseconds, propagate_opentelemetry_tracing_context);
 }

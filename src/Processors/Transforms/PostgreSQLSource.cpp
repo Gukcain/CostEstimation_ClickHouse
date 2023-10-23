@@ -40,6 +40,9 @@ PostgreSQLSource<T>::PostgreSQLSource(
     , connection_holder(std::move(connection_holder_))
 {
     init(sample_block);
+    pv57.header = sample_block;
+    pv57.max_block_size = max_block_size_;
+    pv57.query_str = query_str_;
 }
 
 
@@ -57,6 +60,10 @@ PostgreSQLSource<T>::PostgreSQLSource(
     , auto_commit(auto_commit_)
 {
     init(sample_block);
+    pv57.header = sample_block;
+    pv57.max_block_size = max_block_size_;
+    pv57.query_str = query_str_;
+    pv57.auto_commit = auto_commit_;
 }
 
 

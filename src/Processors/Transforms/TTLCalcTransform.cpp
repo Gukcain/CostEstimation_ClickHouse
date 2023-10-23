@@ -15,6 +15,9 @@ TTLCalcTransform::TTLCalcTransform(
     , data_part(data_part_)
     , log(&Poco::Logger::get(storage_.getLogName() + " (TTLCalcTransform)"))
 {
+    pv63.header = header_;
+    pv63.current_time = current_time_;
+    pv63.force = force_;
     auto old_ttl_infos = data_part->ttl_infos;
 
     if (metadata_snapshot_->hasRowsTTL())

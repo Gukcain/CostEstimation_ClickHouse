@@ -102,7 +102,12 @@ static OutputPort * uniteTotals(const OutputPortRawPtrs & ports, const Block & h
     return totals_port;
 }
 
+Pipe::Pipe() : processors(std::make_shared<Processors>())
+{
+}
+
 Pipe::Pipe(ProcessorPtr source, OutputPort * output, OutputPort * totals, OutputPort * extremes)
+    : processors(std::make_shared<Processors>())
 {
     if (!source->getInputs().empty())
         throw Exception(
@@ -155,11 +160,12 @@ Pipe::Pipe(ProcessorPtr source, OutputPort * output, OutputPort * totals, Output
     totals_port = totals;
     extremes_port = extremes;
     output_ports.push_back(output);
-    processors.emplace_back(std::move(source));
+    processors->emplace_back(std::move(source));
     max_parallel_streams = 1;
 }
 
 Pipe::Pipe(ProcessorPtr source)
+    : processors(std::make_shared<Processors>())
 {
     checkSource(*source);
 
@@ -168,18 +174,18 @@ Pipe::Pipe(ProcessorPtr source)
 
     output_ports.push_back(&source->getOutputs().front());
     header = output_ports.front()->getHeader();
-    processors.emplace_back(std::move(source));
+    processors->emplace_back(std::move(source));
     max_parallel_streams = 1;
 }
 
-Pipe::Pipe(Processors processors_) : processors(std::move(processors_))
+Pipe::Pipe(std::shared_ptr<Processors> processors_) : processors(std::move(processors_))
 {
     /// Create hash table with processors.
     std::unordered_set<const IProcessor *> set;
-    for (const auto & processor : processors)
+    for (const auto & processor : *processors)
         set.emplace(processor.get());
 
-    for (auto & processor : processors)
+    for (auto & processor : *processors)
     {
         for (const auto & port : processor->getInputs())
         {
@@ -222,10 +228,12 @@ Pipe::Pipe(Processors processors_) : processors(std::move(processors_))
     for (size_t i = 1; i < output_ports.size(); ++i)
         assertBlocksHaveEqualStructure(header, output_ports[i]->getHeader(), "Pipe");
 
-    max_parallel_streams = output_ports.size();
+    // 改 05-14
+    // max_parallel_streams = output_ports.size();
+    max_parallel_streams = 1;
 
     if (collected_processors)
-        for (const auto & processor : processors)
+        for (const auto & processor : *processors)
             collected_processors->emplace_back(processor);
 }
 
@@ -311,10 +319,12 @@ Pipe Pipe::unitePipes(Pipes pipes, Processors * collected_processors, bool allow
         if (!allow_empty_header || pipe.header)
             assertCompatibleHeader(pipe.header, res.header, "Pipe::unitePipes");
 
-        res.processors.insert(res.processors.end(), pipe.processors.begin(), pipe.processors.end());
+        res.processors->insert(res.processors->end(), pipe.processors->begin(), pipe.processors->end());
         res.output_ports.insert(res.output_ports.end(), pipe.output_ports.begin(), pipe.output_ports.end());
 
-        res.max_parallel_streams += pipe.max_parallel_streams;
+        // 改 05-14
+        // res.max_parallel_streams += pipe.max_parallel_streams;
+        res.max_parallel_streams = 1;
 
         if (pipe.totals_port)
             totals.emplace_back(pipe.totals_port);
@@ -323,15 +333,15 @@ Pipe Pipe::unitePipes(Pipes pipes, Processors * collected_processors, bool allow
             extremes.emplace_back(pipe.extremes_port);
     }
 
-    size_t num_processors = res.processors.size();
+    size_t num_processors = res.processors->size();
 
-    res.totals_port = uniteTotals(totals, res.header, res.processors);
-    res.extremes_port = uniteExtremes(extremes, res.header, res.processors);
+    res.totals_port = uniteTotals(totals, res.header, *res.processors);
+    res.extremes_port = uniteExtremes(extremes, res.header, *res.processors);
 
     if (res.collected_processors)
     {
-        for (; num_processors < res.processors.size(); ++num_processors)
-            res.collected_processors->emplace_back(res.processors[num_processors]);
+        for (; num_processors < res.processors->size(); ++num_processors)
+            res.collected_processors->emplace_back(res.processors->at(num_processors));
     }
 
     return res;
@@ -351,9 +361,11 @@ void Pipe::addSource(ProcessorPtr source)
         collected_processors->emplace_back(source);
 
     output_ports.push_back(&source->getOutputs().front());
-    processors.emplace_back(std::move(source));
+    processors->emplace_back(std::move(source));
 
-    max_parallel_streams = std::max<size_t>(max_parallel_streams, output_ports.size());
+    // 改 05-14
+    // max_parallel_streams = std::max<size_t>(max_parallel_streams, output_ports.size());
+    max_parallel_streams = 1;
 }
 
 void Pipe::addTotalsSource(ProcessorPtr source)
@@ -373,7 +385,7 @@ void Pipe::addTotalsSource(ProcessorPtr source)
         collected_processors->emplace_back(source);
 
     totals_port = &source->getOutputs().front();
-    processors.emplace_back(std::move(source));
+    processors->emplace_back(std::move(source));
 }
 
 void Pipe::addExtremesSource(ProcessorPtr source)
@@ -393,7 +405,7 @@ void Pipe::addExtremesSource(ProcessorPtr source)
         collected_processors->emplace_back(source);
 
     extremes_port = &source->getOutputs().front();
-    processors.emplace_back(std::move(source));
+    processors->emplace_back(std::move(source));
 }
 
 static void dropPort(OutputPort *& port, Processors & processors, Processors * collected_processors)
@@ -413,12 +425,12 @@ static void dropPort(OutputPort *& port, Processors & processors, Processors * c
 
 void Pipe::dropTotals()
 {
-    dropPort(totals_port, processors, collected_processors);
+    dropPort(totals_port, *processors, collected_processors);
 }
 
 void Pipe::dropExtremes()
 {
-    dropPort(extremes_port, processors, collected_processors);
+    dropPort(extremes_port, *processors, collected_processors);
 }
 
 void Pipe::addTransform(ProcessorPtr transform)
@@ -504,9 +516,11 @@ void Pipe::addTransform(ProcessorPtr transform, OutputPort * totals, OutputPort 
     if (collected_processors)
         collected_processors->emplace_back(transform);
 
-    processors.emplace_back(std::move(transform));
+    processors->emplace_back(std::move(transform));
 
-    max_parallel_streams = std::max<size_t>(max_parallel_streams, output_ports.size());
+    // 改 05-14
+    // max_parallel_streams = std::max<size_t>(max_parallel_streams, output_ports.size());
+    max_parallel_streams = 1;
 }
 
 void Pipe::addTransform(ProcessorPtr transform, InputPort * totals, InputPort * extremes)
@@ -595,9 +609,11 @@ void Pipe::addTransform(ProcessorPtr transform, InputPort * totals, InputPort * 
     if (collected_processors)
         collected_processors->emplace_back(transform);
 
-    processors.emplace_back(std::move(transform));
+    processors->emplace_back(std::move(transform));
 
-    max_parallel_streams = std::max<size_t>(max_parallel_streams, output_ports.size());
+    // 改 05-14
+    // max_parallel_streams = std::max<size_t>(max_parallel_streams, output_ports.size());
+    max_parallel_streams = 1;
 }
 
 void Pipe::addSimpleTransform(const ProcessorGetterWithStreamKind & getter)
@@ -647,7 +663,7 @@ void Pipe::addSimpleTransform(const ProcessorGetterWithStreamKind & getter)
             if (collected_processors)
                 collected_processors->emplace_back(transform);
 
-            processors.emplace_back(std::move(transform));
+            processors->emplace_back(std::move(transform));
         }
     };
 
@@ -698,7 +714,7 @@ void Pipe::addChains(std::vector<Chain> chains)
             if (collected_processors)
                 collected_processors->emplace_back(transform);
 
-            processors.emplace_back(std::move(transform));
+            processors->emplace_back(std::move(transform));
         }
     }
 
@@ -757,7 +773,7 @@ void Pipe::setSinks(const Pipe::ProcessorGetterWithStreamKind & getter)
             transform = std::make_shared<NullSink>(stream->getHeader());
 
         connect(*stream, transform->getInputs().front());
-        processors.emplace_back(std::move(transform));
+        processors->emplace_back(std::move(transform));
     };
 
     for (auto & port : output_ports)
@@ -858,9 +874,11 @@ void Pipe::transform(const Transformer & transformer, bool check_ports)
             collected_processors->emplace_back(processor);
     }
 
-    processors.insert(processors.end(), new_processors.begin(), new_processors.end());
+    processors->insert(processors->end(), new_processors.begin(), new_processors.end());
 
-    max_parallel_streams = std::max<size_t>(max_parallel_streams, output_ports.size());
+    // 改 05-14
+    // max_parallel_streams = std::max<size_t>(max_parallel_streams, output_ports.size());
+    max_parallel_streams = 1;
 }
 
 }

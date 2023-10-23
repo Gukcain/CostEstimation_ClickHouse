@@ -143,6 +143,10 @@ void ExecutorTasks::init(size_t num_threads_, size_t use_threads_, bool profile_
 {
     num_threads = num_threads_;
     use_threads = use_threads_;
+
+    // 改 05-20
+    num_threads = 1;
+    
     threads_queue.init(num_threads);
     task_queue.init(num_threads);
 

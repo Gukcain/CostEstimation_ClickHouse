@@ -7,7 +7,20 @@
 
 namespace DB
 {
+// using namespace std;
+// template <typename T>
+class ParaVal72{
+    public:
+        // T value;
 
+        // const Block
+        Block header;
+        size_t num_ports;
+        String order;
+        size_t size_to_wait;
+
+        // ParaVal72();
+};
 /*
  * Processor with N inputs and N outputs. Moves data from i-th input to i-th output as is.
  * It has a pair of auxiliary ports to notify another instance by sending empty chunk after some condition holds.
@@ -37,6 +50,17 @@ public:
 
     using enum Order;
 
+    ParaVal72 pv72 = ParaVal72();
+    std::vector<Param> getParaList() override{
+        // ParaVal pv72 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(pv72.header.rows())));
+        vec.push_back(Param("colomns",std::to_string(pv72.header.columns())));
+        vec.push_back(Param("num_ports",std::to_string(pv72.num_ports)));
+        vec.push_back(Param("order",pv72.order));
+        return vec;
+    }
     PingPongProcessor(const Block & header, size_t num_ports, Order order_);
 
     Status prepare() override;
@@ -84,9 +108,26 @@ protected:
 class ReadHeadBalancedProcessor : public PingPongProcessor
 {
 public:
+    ParaVal72 pv722 = ParaVal72();
+    std::vector<Param> getParaList() override{
+        // ParaVal pv72 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(pv722.header.rows())));
+        vec.push_back(Param("colomns",std::to_string(pv722.header.columns())));
+        vec.push_back(Param("num_ports",std::to_string(pv722.num_ports)));
+        vec.push_back(Param("size_to_wait",std::to_string(pv722.size_to_wait)));
+        vec.push_back(Param("order",pv72.order));
+        return vec;
+    }
     ReadHeadBalancedProcessor(const Block & header, size_t num_ports, size_t size_to_wait_, Order order_)
         : PingPongProcessor(header, num_ports, order_) , data_consumed(0) , size_to_wait(size_to_wait_)
     {
+        pv722.header = header;
+        pv722.num_ports = num_ports;
+        pv722.order = (order_==Order::First)?"First":"Second";
+        pv722.size_to_wait = size_to_wait_;
+    
     }
 
     String getName() const override { return "ReadHeadBalancedProcessor"; }

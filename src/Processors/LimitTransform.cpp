@@ -18,6 +18,12 @@ LimitTransform::LimitTransform(
     , always_read_till_end(always_read_till_end_)
     , with_ties(with_ties_), description(std::move(description_))
 {
+    pv70.with_ties = with_ties_;
+    pv70.always_read_till_end = always_read_till_end_;
+    pv70.header = header_;
+    pv70.limit = limit_;
+    pv70.offset = offset_;
+    pv70.num_streams = num_streams;
     if (num_streams != 1 && with_ties)
         throw Exception("Cannot use LimitTransform with multiple ports and ties", ErrorCodes::LOGICAL_ERROR);
 

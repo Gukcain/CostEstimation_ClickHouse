@@ -8,6 +8,7 @@ namespace DB
 IOutputFormat::IOutputFormat(const Block & header_, WriteBuffer & out_)
     : IProcessor({header_, header_, header_}, {}), out(out_)
 {
+    i_output_format_header = header_;
 }
 
 IOutputFormat::Status IOutputFormat::prepare()

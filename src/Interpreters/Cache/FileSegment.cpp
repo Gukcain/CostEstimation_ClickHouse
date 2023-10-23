@@ -56,6 +56,7 @@ FileSegment::FileSegment(
         {
             reserved_size = downloaded_size = size_;
             is_downloaded = true;
+            chassert(std::filesystem::file_size(getPathInLocalCache()) == size_);
             break;
         }
         case (State::SKIP_CACHE):
@@ -66,7 +67,7 @@ FileSegment::FileSegment(
         {
             throw Exception(
                 ErrorCodes::REMOTE_FS_OBJECT_CACHE_ERROR,
-                "Can create cell with either EMPTY, DOWNLOADED, DOWNLOADING state");
+                "Can only create cell with either EMPTY, DOWNLOADED or SKIP_CACHE state");
         }
     }
 }
@@ -249,7 +250,6 @@ FileSegment::RemoteFileReaderPtr FileSegment::extractRemoteFileReader()
             return nullptr;
     }
 
-    LOG_TRACE(log, "Extracted reader from file segment");
     return std::move(remote_file_reader);
 }
 
@@ -332,6 +332,8 @@ void FileSegment::write(const char * from, size_t size, size_t offset)
         cache_writer->next();
 
         downloaded_size += size;
+
+        chassert(std::filesystem::file_size(getPathInLocalCache()) == downloaded_size);
     }
     catch (Exception & e)
     {
@@ -346,9 +348,7 @@ void FileSegment::write(const char * from, size_t size, size_t offset)
         throw;
     }
 
-#ifndef NDEBUG
     chassert(getFirstNonDownloadedOffset() == offset + size);
-#endif
 }
 
 FileSegment::State FileSegment::wait()
@@ -546,6 +546,13 @@ void FileSegment::completeBasedOnCurrentState(std::lock_guard<std::mutex> & cach
         resetDownloaderUnlocked(segment_lock);
     }
 
+    if (cache_writer && (is_downloader || is_last_holder))
+    {
+        cache_writer->finalize();
+        cache_writer.reset();
+        remote_file_reader.reset();
+    }
+
     switch (download_state)
     {
         case State::SKIP_CACHE:
@@ -558,8 +565,9 @@ void FileSegment::completeBasedOnCurrentState(std::lock_guard<std::mutex> & cach
         case State::DOWNLOADED:
         {
             chassert(getDownloadedSizeUnlocked(segment_lock) == range().size());
-            assert(is_downloaded);
-            assert(!cache_writer);
+            chassert(getDownloadedSizeUnlocked(segment_lock) == std::filesystem::file_size(getPathInLocalCache()));
+            chassert(is_downloaded);
+            chassert(!cache_writer);
             break;
         }
         case State::DOWNLOADING:
@@ -654,7 +662,7 @@ String FileSegment::stateToString(FileSegment::State state)
         case FileSegment::State::SKIP_CACHE:
             return "SKIP_CACHE";
     }
-    __builtin_unreachable();
+    UNREACHABLE();
 }
 
 void FileSegment::assertCorrectness() const

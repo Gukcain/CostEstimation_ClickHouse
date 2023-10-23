@@ -13,6 +13,10 @@ RemoteSource::RemoteSource(RemoteQueryExecutorPtr executor, bool add_aggregation
     , add_aggregation_info(add_aggregation_info_), query_executor(std::move(executor))
     , async_read(async_read_)
 {
+    pv18.async_read = async_read_;
+    pv18.add_aggregation_info = add_aggregation_info_;
+    pv18.header = executor->getHeader();
+    pv18.enable_auto_progress = false;
     /// Add AggregatedChunkInfo if we expect DataTypeAggregateFunction as a result.
     const auto & sample = getPort().getHeader();
     for (auto & type : sample.getDataTypes())
@@ -142,6 +146,7 @@ RemoteTotalsSource::RemoteTotalsSource(RemoteQueryExecutorPtr executor)
     : ISource(executor->getHeader())
     , query_executor(std::move(executor))
 {
+    pv18.header = executor->getHeader();
 }
 
 RemoteTotalsSource::~RemoteTotalsSource() = default;
@@ -162,6 +167,7 @@ RemoteExtremesSource::RemoteExtremesSource(RemoteQueryExecutorPtr executor)
     : ISource(executor->getHeader())
     , query_executor(std::move(executor))
 {
+    pv18.header = executor->getHeader();
 }
 
 RemoteExtremesSource::~RemoteExtremesSource() = default;

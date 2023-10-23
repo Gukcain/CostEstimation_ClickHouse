@@ -140,6 +140,8 @@ AddingDefaultsTransform::AddingDefaultsTransform(
     , input_format(input_format_)
     , context(context_)
 {
+    pv24.header = header;
+    pv24.skip_empty_chunks = true;
 }
 
 

@@ -18,7 +18,19 @@
 
 namespace DB
 {
+class ParaVal19{
+        public:
+            // T value;
 
+            // const Block
+            Block header;
+            bool enable_auto_progress = true;
+            String format;
+            size_t command_read_timeout_milliseconds;
+            bool skip_empty_chunks = false;
+
+            // ParaVal19();
+    };
 class ShellCommandHolder;
 using ShellCommandHolderPtr = std::unique_ptr<ShellCommandHolder>;
 

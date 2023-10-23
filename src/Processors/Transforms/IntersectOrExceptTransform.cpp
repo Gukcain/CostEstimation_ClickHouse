@@ -18,6 +18,8 @@ IntersectOrExceptTransform::IntersectOrExceptTransform(const Block & header_, Op
         auto pos = columns.empty() ? i : header_.getPositionByName(columns[i]);
         key_columns_pos.emplace_back(pos);
     }
+    pv45.header = header_;
+    pv45.op = operator_;
 }
 
 

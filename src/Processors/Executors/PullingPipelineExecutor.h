@@ -34,6 +34,10 @@ public:
     bool pull(Chunk & chunk);
     bool pull(Block & block);
 
+    // 2023-04-16 18：47 改
+    bool pull(Chunk & chunk, uint64_t milliseconds);
+    bool pull(Block & block, uint64_t milliseconds);
+
     /// Stop execution. It is not necessary, but helps to stop execution before executor is destroyed.
     void cancel();
 

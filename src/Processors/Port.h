@@ -50,7 +50,7 @@ public:
     };
 
 protected:
-    /// Shared state of two connected ports.
+    /// Shared state of two connected ports. 也就是说上游Processor在Outport流出数据(写入某个地方)，就能被下游Processor 从InPort读取。
     class State
     {
     public:

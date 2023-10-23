@@ -177,6 +177,8 @@ public:
         pending.setCapacity(max_tasks_count);
         active.set_capacity(max_tasks_count);
 
+        // 改 05-18
+        threads_count = 1;
         pool.setMaxThreads(std::max(1UL, threads_count));
         pool.setMaxFreeThreads(std::max(1UL, threads_count));
         pool.setQueueSize(std::max(1UL, threads_count));

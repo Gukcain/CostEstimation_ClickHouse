@@ -6,8 +6,6 @@
 #include <Processors/Executors/PushingAsyncPipelineExecutor.h>
 #include <Storages/IStorage.h>
 #include <Core/Protocol.h>
-#include <DataTypes/DataTypesNumber.h>
-#include <DataTypes/DataTypeString.h>
 
 
 namespace DB
@@ -125,7 +123,9 @@ void LocalConnection::sendQuery(
             size_t num_threads = state->io.pipeline.getNumThreads();
             if (num_threads > 1)
             {
-                state->pushing_async_executor = std::make_unique<PushingAsyncPipelineExecutor>(state->io.pipeline);
+                // 改 2023-05-07
+                // state->pushing_async_executor = std::make_unique<PushingAsyncPipelineExecutor>(state->io.pipeline);
+                state->pushing_async_executor = std::make_unique<PushingPipelineExecutor>(state->io.pipeline);
                 state->pushing_async_executor->start();
                 state->block = state->pushing_async_executor->getHeader();
             }
@@ -149,7 +149,9 @@ void LocalConnection::sendQuery(
         else if (state->io.pipeline.pulling())
         {
             state->block = state->io.pipeline.getHeader();
-            state->executor = std::make_unique<PullingAsyncPipelineExecutor>(state->io.pipeline);
+            // 改 2023-05-07
+            // state->executor = std::make_unique<PullingAsyncPipelineExecutor>(state->io.pipeline);
+            state->executor = std::make_unique<PullingPipelineExecutor>(state->io.pipeline);
         }
         else if (state->io.pipeline.completed())
         {

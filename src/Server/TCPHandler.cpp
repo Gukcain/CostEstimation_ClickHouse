@@ -1,8 +1,12 @@
 #include <algorithm>
+#include <cstddef>
+#include <ctime>
+#include <fstream>
 #include <iomanip>
 #include <iterator>
 #include <memory>
 #include <mutex>
+#include <string>
 #include <vector>
 #include <string_view>
 #include <cstring>
@@ -36,6 +40,7 @@
 #include <Storages/MergeTree/MergeTreeDataPartUUID.h>
 #include <Storages/StorageS3Cluster.h>
 #include <Core/ExternalTable.h>
+#include <Access/AccessControl.h>
 #include <Access/Credentials.h>
 #include <Storages/ColumnDefault.h>
 #include <DataTypes/DataTypeLowCardinality.h>
@@ -52,12 +57,17 @@
 #include <Processors/Sinks/SinkToStorage.h>
 
 #include "Core/Protocol.h"
+#include "Processors/Executors/PullingPipelineExecutor.h"
 #include "TCPHandler.h"
 
-#include <Common/config_version.h>
+#include "config_version.h"
+
+#include <Parsers/HasQuery.h>
+#include <chrono>
 
 using namespace std::literals;
 using namespace DB;
+using namespace std;
 
 
 namespace CurrentMetrics
@@ -84,7 +94,9 @@ NameToNameMap convertToQueryParameters(const Settings & passed_params)
 
 namespace DB
 {
-
+std::vector<std::vector<std::string>> ParaVector;
+DB::Processors processorList;
+String Query_String;
 namespace ErrorCodes
 {
     extern const int LOGICAL_ERROR;
@@ -109,6 +121,18 @@ TCPHandler::TCPHandler(IServer & server_, TCPServer & tcp_server_, const Poco::N
 {
 }
 
+TCPHandler::TCPHandler(IServer & server_, TCPServer & tcp_server_, const Poco::Net::StreamSocket & socket_, TCPProtocolStackData & stack_data, std::string server_display_name_)
+: Poco::Net::TCPServerConnection(socket_)
+    , server(server_)
+    , tcp_server(tcp_server_)
+    , log(&Poco::Logger::get("TCPHandler"))
+    , forwarded_for(stack_data.forwarded_for)
+    , certificate(stack_data.certificate)
+    , default_database(stack_data.default_database)
+    , server_display_name(std::move(server_display_name_))
+{
+}
+
 TCPHandler::~TCPHandler()
 {
     try
@@ -125,6 +149,7 @@ TCPHandler::~TCPHandler()
 
 void TCPHandler::runImpl()
 {
+
     setThreadName("TCPHandler");
     ThreadStatus thread_status;
 
@@ -227,6 +252,10 @@ void TCPHandler::runImpl()
         std::unique_ptr<DB::Exception> exception;
         bool network_error = false;
         bool query_duration_already_logged = false;
+
+        // 改 09-02
+        // outputPara();
+        auto starttime = chrono::steady_clock::now();
 
         try
         {
@@ -358,47 +387,74 @@ void TCPHandler::runImpl()
                 return receivePartitionMergeTreeReadTaskResponseAssumeLocked();
             });
 
+            // 改 09-01
+            // if((state.query[0]=='S'||state.query[0]=='s')&&(state.query[1]=='E'||state.query[1]=='e')){
+            //     HasQuery::hasquery = true;
+            // }
+            // 改 09-02
+            // size_t query_totaltime = 0;
+            // auto starttime = chrono::steady_clock::now();
+            if((state.query[0]=='-'&&state.query[1]=='-')||(state.query[0]=='s'&&state.query[1]=='e')||(state.query[0]=='w'&&state.query[1]=='i')){
+                // outputPara();   // no
+                HasQuery::hasquery = true;
+                Query_String = state.query;
+                ParaVector.clear();
+                ParaVector.shrink_to_fit();
+                starttime = chrono::steady_clock::now();
+                // auto end = chrono::steady_clock::now();
+                // chrono::duration_cast<chrono::seconds>(end - start).count();
+                // auto end = std::chrono::system_clock::now();
+            }
             /// Processing Query
             state.io = executeQuery(state.query, query_context, false, state.stage);
+
+            // 改 09-03 debug测试
+            // outputPara2();   //no
 
             after_check_cancelled.restart();
             after_send_progress.restart();
 
             if (state.io.pipeline.pushing())
-            /// FIXME: check explicitly that insert query suggests to receive data via native protocol,
             {
+                /// FIXME: check explicitly that insert query suggests to receive data via native protocol,
                 state.need_receive_data_for_insert = true;
                 processInsertQuery();
+                state.io.onFinish();
             }
             else if (state.io.pipeline.pulling())
             {
                 processOrdinaryQueryWithProcessors();
+                state.io.onFinish();
             }
             else if (state.io.pipeline.completed())
             {
-                CompletedPipelineExecutor executor(state.io.pipeline);
-                /// Should not check for cancel in case of input.
-                if (!state.need_receive_data_for_input)
                 {
-                    auto callback = [this]()
+                    CompletedPipelineExecutor executor(state.io.pipeline);
+
+                    /// Should not check for cancel in case of input.
+                    if (!state.need_receive_data_for_input)
                     {
-                        std::lock_guard lock(fatal_error_mutex);
+                        auto callback = [this]()
+                        {
+                            std::lock_guard lock(fatal_error_mutex);
 
-                        if (isQueryCancelled())
-                            return true;
+                            if (isQueryCancelled())
+                                return true;
 
-                        sendProgress();
-                        sendSelectProfileEvents();
-                        sendLogs();
+                            sendProgress();
+                            sendSelectProfileEvents();
+                            sendLogs();
 
-                        return false;
-                    };
+                            return false;
+                        };
 
-                    executor.setCancelCallback(callback, interactive_delay / 1000);
+                        executor.setCancelCallback(callback, interactive_delay / 1000);
+                    }
+                    executor.execute();
                 }
-                executor.execute();
 
-                /// Send final progress
+                state.io.onFinish();
+                /// Send final progress after calling onFinish(), since it will update the progress.
                 ///
                 /// NOTE: we cannot send Progress for regular INSERT (with VALUES)
                 /// without breaking protocol compatibility, but it can be done
@@ -406,8 +462,10 @@ void TCPHandler::runImpl()
                 sendProgress();
                 sendSelectProfileEvents();
             }
-
-            state.io.onFinish();
+            else
+            {
+                state.io.onFinish();
+            }
 
             /// Do it before sending end of stream, to have a chance to show log message in client.
             query_scope->logPeakMemoryUsage();
@@ -427,6 +485,7 @@ void TCPHandler::runImpl()
             state.reset();
             query_scope.reset();
             thread_trace_context.reset();
+            // HasQuery::hasquery = false;
         }
         catch (const Exception & e)
         {
@@ -562,10 +621,61 @@ void TCPHandler::runImpl()
             /// We don't really have session in interserver mode, new one is created for each query. It's better to reset it now.
             session.reset();
         }
-
+        // 改 09-01 
+        if(HasQuery::hasquery){
+            HasQuery::hasquery = false;
+            Query_String = "";
+            // outputPara3();  //no
+            auto endtime = chrono::steady_clock::now();
+            outputCost();
+            // ParaVector.clear();
+            // ParaVector.shrink_to_fit();
+            
+            // chrono::duration_cast<chrono::seconds>(endtime - starttime).count();
+            std::chrono::duration<double> elapsed_seconds = endtime-starttime;
+            outputTotalTime(std::to_string(elapsed_seconds.count()));
+        }
+        
         if (network_error)
             break;
     }
+}
+
+void TCPHandler::outputCost(){
+    std::ofstream os;
+    os.open("CostList.csv",std::ios::out|std::ios::app);
+    // os<<"yes1"<<endl;
+    for(auto subvec: ParaVector){
+        for(std::string param: subvec){
+            os<<param<<",";
+        }
+        os<<std::endl;
+    }
+    // os<<ParaVector.size()<<endl;
+    // os<<"yes2"<<endl;
+    // for (auto iter = ParaVector.begin(); iter != ParaVector.end(); iter++)
+	// {
+	// 	for(auto param: (*iter)){
+    //         os<<param<<",";
+    //     }
+    //     os<<std::endl;
+	// }
+
+    // for(std::vector<std::string> vec:DB::ParaVector){
+    //     for(std::string param:vec){
+    //         os<<param<<",";
+    //     }
+    //     os<<std::endl;
+    // }
+    // os<<std::endl;
+    os.close();
+}
+
+void TCPHandler::outputTotalTime(std::string query_totaltime){
+    std::ofstream os;
+    os.open("Query_TotalTime.csv",std::ios::out|std::ios::app);
+    os<<query_totaltime<<endl;
+    os.close();
 }
 
 
@@ -662,7 +772,8 @@ void TCPHandler::skipData()
 
 void TCPHandler::processInsertQuery()
 {
-    size_t num_threads = state.io.pipeline.getNumThreads();
+    // 改 2023-04-17 17：55 
+    // size_t num_threads = state.io.pipeline.getNumThreads();
 
     auto run_executor = [&](auto & executor)
     {
@@ -696,16 +807,17 @@ void TCPHandler::processInsertQuery()
         executor.finish();
     };
 
-    if (num_threads > 1)
-    {
-        PushingAsyncPipelineExecutor executor(state.io.pipeline);
-        run_executor(executor);
-    }
-    else
-    {
+    // 改 2023-04-17 17：54 不判断num_threads 任何情况都采用PushingPipelineExecutor
+    // if (num_threads > 1)
+    // {
+    //     PushingAsyncPipelineExecutor executor(state.io.pipeline);
+    //     run_executor(executor);
+    // }
+    // else
+    // {
         PushingPipelineExecutor executor(state.io.pipeline);
         run_executor(executor);
-    }
+    // }
 
     sendInsertProfileEvents();
 }
@@ -716,18 +828,26 @@ void TCPHandler::processOrdinaryQueryWithProcessors()
     auto & pipeline = state.io.pipeline;
 
     if (query_context->getSettingsRef().allow_experimental_query_deduplication)
+    {
+        std::lock_guard lock(task_callback_mutex);
         sendPartUUIDs();
+    }
 
     /// Send header-block, to allow client to prepare output format for data to send.
     {
         const auto & header = pipeline.getHeader();
 
         if (header)
+        {
+            std::lock_guard lock(task_callback_mutex);
             sendData(header);
+        }
     }
 
     {
-        PullingAsyncPipelineExecutor executor(pipeline);
+        // 修改 2023-04-16 18：42
+        // PullingAsyncPipelineExecutor executor(pipeline);
+        PullingPipelineExecutor executor(pipeline);
         CurrentMetrics::Increment query_thread_metric_increment{CurrentMetrics::QueryThread};
 
         Block block;
@@ -824,7 +944,7 @@ void TCPHandler::processTablesStatusRequest()
         if (auto * replicated_table = dynamic_cast<StorageReplicatedMergeTree *>(table.get()))
         {
             status.is_replicated = true;
-            status.absolute_delay = replicated_table->getAbsoluteDelay();
+            status.absolute_delay = static_cast<UInt32>(replicated_table->getAbsoluteDelay());
         }
         else
             status.is_replicated = false; //-V1048
@@ -1055,7 +1175,7 @@ std::unique_ptr<Session> TCPHandler::makeSession()
 {
     auto interface = is_interserver_mode ? ClientInfo::Interface::TCP_INTERSERVER : ClientInfo::Interface::TCP;
 
-    auto res = std::make_unique<Session>(server.context(), interface, socket().secure());
+    auto res = std::make_unique<Session>(server.context(), interface, socket().secure(), certificate);
 
     auto & client_info = res->getClientInfo();
     client_info.forwarded_for = forwarded_for;
@@ -1082,6 +1202,7 @@ void TCPHandler::receiveHello()
     UInt64 packet_type = 0;
     String user;
     String password;
+    String default_db;
 
     readVarUInt(packet_type, *in);
     if (packet_type != Protocol::Client::Hello)
@@ -1103,7 +1224,9 @@ void TCPHandler::receiveHello()
     readVarUInt(client_version_minor, *in);
     // NOTE For backward compatibility of the protocol, client cannot send its version_patch.
     readVarUInt(client_tcp_protocol_version, *in);
-    readStringBinary(default_database, *in);
+    readStringBinary(default_db, *in);
+    if (!default_db.empty())
+        default_database = default_db;
     readStringBinary(user, *in);
     readStringBinary(password, *in);
 
@@ -1170,6 +1293,17 @@ void TCPHandler::sendHello()
         writeStringBinary(server_display_name, *out);
     if (client_tcp_protocol_version >= DBMS_MIN_REVISION_WITH_VERSION_PATCH)
         writeVarUInt(DBMS_VERSION_PATCH, *out);
+    if (client_tcp_protocol_version >= DBMS_MIN_PROTOCOL_VERSION_WITH_PASSWORD_COMPLEXITY_RULES)
+    {
+        auto rules = server.context()->getAccessControl().getPasswordComplexityRules();
+
+        writeVarUInt(rules.size(), *out);
+        for (const auto & [original_pattern, exception_message] : rules)
+        {
+            writeStringBinary(original_pattern, *out);
+            writeStringBinary(exception_message, *out);
+        }
+    }
     out->next();
 }
 

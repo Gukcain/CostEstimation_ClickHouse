@@ -17,6 +17,48 @@
 
 #include <QueryPipeline/QueryPipelineBuilder.h>
 
+#include <fstream>
+#include "Processors/json.hpp"
+// using namespace std;
+using json = nlohmann::json;
+
+
+namespace ns{
+    struct Frame
+    {
+        DB::QueryPlan::Node * node = {};
+        size_t offset = 0;
+        bool is_description_printed = false;
+        size_t next_child = 0;
+    };
+
+    struct Processor{
+        String name;
+        std::vector<String> params;
+    };
+    struct NewNode{
+        String address;
+        std::vector<Processor> p = {};
+        std::vector<String> children = {};
+    };
+
+    void to_json(nlohmann::json& j, const ns::Processor& val)
+    {
+        // j["id"] = val.id;
+        // j["name"] = val.name;
+        // j["maxPlayers"] = val.maxPlayers;
+        // j["questionCount"] = val.questionCount;
+        // j["timePerQuestion"] = val.timePerQuestion;
+        // j["isActive"] = val.isActive;
+        j["Name"]=val.name;
+        j["Parameters"]=val.params;
+    }
+
+    void to_json(nlohmann::json& j, const ns::NewNode& val){
+        j["Address"] = val.address;
+        
+    }
+}
 
 namespace DB
 {
@@ -156,6 +198,12 @@ QueryPipelineBuilderPtr QueryPlan::buildQueryPipeline(
     const QueryPlanOptimizationSettings & optimization_settings,
     const BuildQueryPipelineSettings & build_pipeline_settings)
 {
+    // 改 05-08
+    // ofstream location_out;
+    // location_out.open("RandomTest.txt", std::ios::out | std::ios::app); 
+    // location_out << "进入了QueryPlan::buildQueryPipeline" << std::endl;
+    // location_out.close();
+
     checkInitialized();
     optimize(optimization_settings);
 
@@ -181,9 +229,13 @@ QueryPipelineBuilderPtr QueryPlan::buildQueryPipeline(
         }
 
         size_t next_child = frame.pipelines.size();
+        // 当一个Node中的children都组装成了Pipeline时，那么就可以当前Node与children组装好的
+        // pipeline 构造新的Pipeline.
         if (next_child == frame.node->children.size())
         {
             bool limit_max_threads = frame.pipelines.empty();
+            // 改 05-07
+            limit_max_threads = true;
             last_pipeline = frame.node->step->updatePipeline(std::move(frame.pipelines), build_pipeline_settings);
 
             if (limit_max_threads && max_threads)
@@ -445,10 +497,132 @@ void QueryPlan::explainPipeline(WriteBuffer & buffer, const ExplainPipelineOptio
     }
 }
 
+void QueryPlan::outputPipeline()
+{
+    checkInitialized();
+    WriteBufferFromOwnString buffer;
+    IQueryPlanStep::FormatSettings settings{.out = buffer, .write_header = false};
+
+    json result;
+    json all_nodes;
+
+    std::stack<ns::Frame> stack;
+    stack.push(ns::Frame{.node = root});
+    std::vector<ns::NewNode> nodeslist;
+
+    while (!stack.empty())
+    {
+        auto & frame = stack.top();
+
+        if (!frame.is_description_printed)
+        {
+            settings.offset = frame.offset;
+            // explainPipelineStep(*frame.node->step, settings);
+        
+            json node_j;
+            json node_children_list;
+            json node_processors_list;
+            ns::NewNode node_n;
+            IProcessor * prev = nullptr;
+            
+            // String addr;
+            // char ptr_str[20];
+            // std::sprintf(ptr_str, "0x%p", static_cast<void*>(frame.node)); 
+            node_n.address = "0x" + std::to_string(*(static_cast<unsigned long long*>(static_cast<void*>(frame.node)))); //地址
+            node_j["Address"] = node_n.address;
+
+            for(Node* nd:frame.node->children){         //孩子
+                String addr = "0x" + std::to_string(*(static_cast<unsigned long long*>(static_cast<void*>(nd))));
+                node_n.children.push_back(addr);
+                json json_child_addr;
+                json_child_addr["Address"] = addr;
+                node_children_list.push_back(json_child_addr);
+            }
+            // node_j["Children"] = node_children_list;
+
+            // for(auto it = frame.node->children.begin();it != frame.node->children.end();++it){
+            //     node_n.children.push_back("0x" + std::to_string((unsigned long long)static_cast<void*>(it->get())););
+            // }
+
+            //算子
+            processorList.clear();
+            (*frame.node->step).describePipeline(settings);
+            for (auto it = processorList.rbegin(); it != processorList.rend(); ++it)
+            {
+                if (prev && prev->getName() != (*it)->getName())
+                {
+
+                    // doDescribeProcessor(*prev, count, settings);
+                    // std::vector<String> s;
+                    // for(Param p:prev->getParaList()){
+                    //     s.push_back(p.val);
+                    // }
+
+                    std::vector<String> s;
+                    s = prev->fillParamVec(prev->getParaList());
+                    node_n.p.push_back(ns::Processor{.name = prev->getName(),.params = s});
+
+                    json a_processor;
+                    a_processor["Name"] = prev->getName();
+                    a_processor["Parameters"] = s;
+
+                    node_processors_list.push_back(a_processor);
+
+                }
+
+                prev = it->get();
+            }
+
+            if (prev){
+                // std::vector<String> s;
+                // for(Param p:prev->getParaList()){
+                //     s.push_back(p.val);
+                // }
+                std::vector<String> s;
+                s = prev->fillParamVec(prev->getParaList());
+
+                node_n.p.push_back(ns::Processor{.name = prev->getName(),.params = s});
+
+                json a_processor;
+                a_processor["Name"] = prev->getName();
+                a_processor["Parameters"] = s;
+
+                node_processors_list.push_back(a_processor);
+            }
+                // doDescribeProcessor(*prev, count, settings);
+
+            frame.offset = settings.offset;
+            frame.is_description_printed = true;
+            nodeslist.push_back(node_n);
+
+            node_j["Processors"] = node_processors_list;
+            node_j["Children"] = node_children_list;
+
+            all_nodes.push_back(node_j);
+        }
+
+        if (frame.next_child < frame.node->children.size())
+        {
+            stack.push(ns::Frame{frame.node->children[frame.next_child], frame.offset});
+            ++frame.next_child;
+        }
+        else
+            stack.pop();
+    }
+
+    result["Query"] = Query_String;
+    result["Nodes"] = all_nodes;
+    
+    std::ofstream o;
+    o.open("PipelineTree.json",std::ios::out|std::ios::app);
+    o << std::setw(4) << result << std::endl;
+
+}
+
 void QueryPlan::optimize(const QueryPlanOptimizationSettings & optimization_settings)
 {
-    QueryPlanOptimizations::optimizeTree(optimization_settings, *root, nodes);
-    QueryPlanOptimizations::optimizePrimaryKeyCondition(*root);
+    QueryPlanOptimizations::optimizeTreeFirstPass(optimization_settings, *root, nodes);
+    QueryPlanOptimizations::optimizeTreeSecondPass(optimization_settings, *root, nodes);
 }
 
 void QueryPlan::explainEstimate(MutableColumns & columns)

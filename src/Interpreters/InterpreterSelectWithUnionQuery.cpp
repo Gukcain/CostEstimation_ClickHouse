@@ -1,8 +1,12 @@
+#include <Access/AccessControl.h>
+
 #include <Columns/getLeastSuperColumn.h>
 #include <Interpreters/Context.h>
 #include <Interpreters/InterpreterSelectQuery.h>
 #include <Interpreters/InterpreterSelectWithUnionQuery.h>
 #include <Interpreters/InterpreterSelectIntersectExceptQuery.h>
+#include <Interpreters/QueryLog.h>
+#include <Interpreters/RandomGenerate.h>
 #include <Parsers/ASTSelectQuery.h>
 #include <Parsers/ASTSelectWithUnionQuery.h>
 #include <Parsers/ASTSelectIntersectExceptQuery.h>
@@ -21,6 +25,11 @@
 #include <Interpreters/InDepthNodeVisitor.h>
 
 #include <algorithm>
+
+#include <fstream>
+// using namespace std;
+
+// extern std::default_random_engine e;
 
 namespace DB
 {
@@ -288,6 +297,13 @@ void InterpreterSelectWithUnionQuery::buildQueryPlan(QueryPlan & query_plan)
     for (auto & interpreter : nested_interpreters)
         interpreter->addStorageLimits(storage_limits);
 
+    // 改 05-08
+    // std::default_random_engine e;
+    // double random_test = formData(); 
+    // ofstream location_out;
+    // location_out.open("RandomTest.txt", std::ios::out | std::ios::app); 
+    // location_out << "进入了InterpreterSelectWithUnionQuery::buildQueryPlan，num_plans=" << num_plans <<"，随机数值为"<<random_test<< endl;
+
     /// Skip union for single interpreter.
     if (num_plans == 1)
     {
@@ -295,6 +311,11 @@ void InterpreterSelectWithUnionQuery::buildQueryPlan(QueryPlan & query_plan)
     }
     else
     {
+        // 改 05-08
+        // location_out.open("RandomTest.txt", std::ios::out | std::ios::app); 
+        // location_out << "进入了InterpreterSelectWithUnionQuery::buildQueryPlan，num_plans=" << num_plans <<"，随机数值为"<<random_test<< endl;
+        // location_out.close();
+
         std::vector<std::unique_ptr<QueryPlan>> plans(num_plans);
         DataStreams data_streams(num_plans);
 
@@ -364,6 +385,18 @@ BlockIO InterpreterSelectWithUnionQuery::execute()
 {
     BlockIO res;
 
+    // 改 05-08
+    // std::default_random_engine e;
+    // double random_test = formData();
+    // ofstream location_out;
+    // location_out.open("RandomTest.txt", std::ios::out | std::ios::app); 
+    // location_out << "进入了InterpreterSelectWithUnionQuery::execute，随机数值为" << random_test << endl;
+
+    // std::ofstream os;
+    //     os.open("ForTest.txt",std::ios::out|std::ios::app);
+    //     os<<2<<std::endl;
+    //     os.close();
+
     QueryPlan query_plan;
     buildQueryPlan(query_plan);
 
@@ -373,6 +406,11 @@ BlockIO InterpreterSelectWithUnionQuery::execute()
 
     res.pipeline = QueryPipelineBuilder::getPipeline(std::move(*builder));
     setQuota(res.pipeline);
+
+    // 改 10-19
+    if(HasQuery::hasquery){
+        query_plan.outputPipeline();
+    }
     return res;
 }
 
@@ -380,6 +418,27 @@ void InterpreterSelectWithUnionQuery::ignoreWithTotals()
 {
     for (auto & interpreter : nested_interpreters)
         interpreter->ignoreWithTotals();
+}
+
+void InterpreterSelectWithUnionQuery::extendQueryLogElemImpl(QueryLogElement & elem, const ASTPtr & /*ast*/, ContextPtr /*context_*/) const
+{
+    elem.query_kind = "Select";
+
+    for (const auto & interpreter : nested_interpreters)
+    {
+        if (const auto * select_interpreter = dynamic_cast<const InterpreterSelectQuery *>(interpreter.get()))
+        {
+            auto filter = select_interpreter->getRowPolicyFilter();
+            if (filter)
+            {
+                for (const auto & row_policy : filter->policies)
+                {
+                    auto name = row_policy->getFullName().toString();
+                    elem.used_row_policies.emplace(std::move(name));
+                }
+            }
+        }
+    }
 }
 
 }

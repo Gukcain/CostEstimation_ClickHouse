@@ -11,6 +11,8 @@ namespace ErrorCodes
 CopyTransform::CopyTransform(const Block & header, size_t num_outputs)
     : IProcessor(InputPorts(1, header), OutputPorts(num_outputs, header))
 {
+    pv31.num_outputs = num_outputs;
+    pv31.header = header;
     if (num_outputs <= 1)
         throw Exception("CopyTransform expects more than 1 outputs, got " + std::to_string(num_outputs), ErrorCodes::LOGICAL_ERROR);
 }

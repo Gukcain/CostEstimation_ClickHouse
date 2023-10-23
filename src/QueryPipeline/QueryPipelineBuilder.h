@@ -148,7 +148,7 @@ public:
 
     const Block & getHeader() const { return pipe.getHeader(); }
 
-    void setProcessListElement(QueryStatus * elem);
+    void setProcessListElement(QueryStatusPtr elem);
     void setProgressCallback(ProgressCallback callback);
 
     /// Recommend number of threads for pipeline execution.
@@ -159,15 +159,20 @@ public:
         if (max_threads) //-V1051
             num_threads = std::min(num_threads, max_threads);
 
+        // 改 05-18 
+        num_threads = 1;
         return std::max<size_t>(1, num_threads);
     }
 
     /// Set upper limit for the recommend number of threads
-    void setMaxThreads(size_t max_threads_) { max_threads = max_threads_; }
+    void setMaxThreads(size_t max_threads_) { max_threads_=1;max_threads = max_threads_; }
 
     /// Update upper limit for the recommend number of threads
     void limitMaxThreads(size_t max_threads_)
     {
+        // 改 05-14
+        max_threads_ = 1;
+
         if (max_threads == 0 || max_threads_ < max_threads)
             max_threads = max_threads_;
     }
@@ -187,9 +192,10 @@ private:
 
     /// Limit on the number of threads. Zero means no limit.
     /// Sometimes, more streams are created then the number of threads for more optimal execution.
-    size_t max_threads = 0;
+    // size_t max_threads = 0;
+    size_t max_threads = 1;
 
-    QueryStatus * process_list_element = nullptr;
+    QueryStatusPtr process_list_element;
     ProgressCallback progress_callback = nullptr;
 
     void checkInitialized();

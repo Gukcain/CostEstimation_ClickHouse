@@ -1,3 +1,4 @@
+#include "Server/TCPHandler.h"
 #include <Processors/QueryPlan/IQueryPlanStep.h>
 #include <Processors/IProcessor.h>
 #include <IO/Operators.h>
@@ -97,11 +98,16 @@ void IQueryPlanStep::describePipeline(const Processors & processors, FormatSetti
     const IProcessor * prev = nullptr;
     size_t count = 0;
 
+    // 改 10-19
+    processorList.assign(processors.begin(),processors.end());
+
     for (auto it = processors.rbegin(); it != processors.rend(); ++it)
     {
         if (prev && prev->getName() != (*it)->getName())
         {
+
             doDescribeProcessor(*prev, count, settings);
+
             count = 0;
         }
 

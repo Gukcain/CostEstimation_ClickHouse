@@ -5,15 +5,18 @@
 #include <Processors/IAccumulatingTransform.h>
 #include <Common/Stopwatch.h>
 #include <Common/setThreadName.h>
+#include <Common/scope_guard_safe.h>
 
 namespace DB
 {
+// using namespace std;
 
 class AggregatedChunkInfo : public ChunkInfo
 {
 public:
     bool is_overflows = false;
     Int32 bucket_num = -1;
+    UInt64 chunk_num = 0; // chunk number in order of generation, used during memory bound merging to restore chunks order
 };
 
 using AggregatorList = std::list<Aggregator>;
@@ -96,6 +99,10 @@ struct ManyAggregatedData
                     pool->trySchedule(
                         [variant = std::move(variant), thread_group = CurrentThread::getGroup()]()
                         {
+                            SCOPE_EXIT_SAFE(
+                                if (thread_group)
+                                    CurrentThread::detachQueryIfNotDetached();
+                            );
                             if (thread_group)
                                 CurrentThread::attachToIfDetached(thread_group);
 
@@ -131,9 +138,45 @@ using ManyAggregatedDataPtr = std::shared_ptr<ManyAggregatedData>;
   * At aggregation step, every transform uses it's own AggregatedDataVariants structure.
   * At merging step, all structures pass to ConvertingAggregatedToChunksTransform.
   */
+class ParaVal26{
+    public:
+        // T value;
+
+        // const Block
+        Block header;
+        // SortDescription description;
+        size_t max_threads;
+        size_t temporary_data_merge_threads;
+        size_t current_variant;
+        AggregatingTransformParamsPtr ptr;
+        
+        // ParaVal26();
+};
 class AggregatingTransform : public IProcessor
 {
 public:
+    ParaVal26 pv26 = ParaVal26();
+    std::vector<Param> getParaList() override{
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(pv26.header.rows())));
+        vec.push_back(Param("colomns",std::to_string(pv26.header.columns())));
+        vec.push_back(Param("max_threads", std::to_string(pv26.max_threads)));
+        vec.push_back(Param("temporary_data_merge_threads", std::to_string(pv26.temporary_data_merge_threads)));
+        vec.push_back(Param("current_variant", std::to_string(pv26.current_variant)));
+        if(params){
+            String str;
+            for(const auto & key : params.get()->params.keys){
+                str += key;
+            }
+            vec.push_back(Param("keys", str));
+            vec.push_back(Param("keys_size", std::to_string(params.get()->params.keys_size)));
+            vec.push_back(Param("aggregates_size", std::to_string(params.get()->params.aggregates_size)));
+            vec.push_back(Param("max_rows_to_group_by", std::to_string(params.get()->params.max_rows_to_group_by)));
+            vec.push_back(Param("min_free_disk_space", std::to_string(params.get()->params.min_free_disk_space)));
+        }
+        
+        return vec;
+    }
     AggregatingTransform(Block header, AggregatingTransformParamsPtr params_);
 
     /// For Parallel aggregating.

@@ -77,6 +77,14 @@ TotalsHavingTransform::TotalsHavingTransform(
     , auto_include_threshold(auto_include_threshold_)
     , final(final_)
 {
+    pv62.final = final_;
+    pv62.auto_include_threshold = auto_include_threshold_;
+    pv62.filter_column = filter_column_;
+    pv62.remove_filter = remove_filter_;
+    pv62.header = header;
+    pv62.overflow_row = overflow_row_;
+    pv62.skip_empty_chunks = true;
+    pv62.totals_mode = totals_mode_;
     finalized_header = getInputPort().getHeader();
     finalizeBlock(finalized_header, aggregates_mask);
 

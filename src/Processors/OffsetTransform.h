@@ -6,7 +6,19 @@
 
 namespace DB
 {
+// using namespace std;
+// template <typename T>
+class ParaVal71{
+    public:
+        // T value;
 
+        // const Block
+        Block header;
+        UInt64 offset;
+        size_t num_streams = 1;
+
+        // ParaVal71();
+};
 /// Implementation for OFFSET N (without limit)
 /// This processor support multiple inputs and outputs (the same number).
 /// Each pair of input and output port works independently.
@@ -33,6 +45,18 @@ private:
     size_t num_finished_port_pairs = 0;
 
 public:
+    ParaVal71 pv71 = ParaVal71();
+    std::vector<Param> getParaList() override{
+        // ParaVal pv71 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(pv71.header.rows())));
+        vec.push_back(Param("colomns",std::to_string(pv71.header.columns())));
+        vec.push_back(Param("offset",std::to_string(pv71.offset)));
+        vec.push_back(Param("num_streams",std::to_string(pv71.num_streams)));
+        
+        return vec;
+    }
     OffsetTransform(const Block & header_, UInt64 offset_, size_t num_streams = 1);
 
     String getName() const override { return "Offset"; }

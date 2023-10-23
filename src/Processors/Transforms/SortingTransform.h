@@ -38,14 +38,53 @@ private:
     Chunk mergeBatchImpl(TSortingQueue & queue);
 
 };
+// using namespace std;
+// template <typename T>
+class ParaVal60{
+    public:
+        // T value;
 
+        // const Block
+        Block header;
+        size_t max_merged_block_size;
+        UInt64 limit;
+        size_t chunks_rows_sum ;
+        size_t chunks_columns_sum;
+        bool increase_sort_description_compile_attempts;
+
+        // ParaVal60();
+};
 
 class MergeSorterSource : public ISource
 {
 public:
+    ParaVal60 pv60 = ParaVal60();
+    std::vector<Param> getParaList() override{
+        // ParaVal pv60 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(pv60.header.rows())));
+        vec.push_back(Param("colomns",std::to_string(pv60.header.columns())));
+        vec.push_back(Param("chunks_rows_sum",std::to_string(pv60.chunks_rows_sum)));
+        vec.push_back(Param("chunks_columns_sum",std::to_string(pv60.chunks_columns_sum)));
+        vec.push_back(Param("max_merged_block_size",std::to_string(pv60.max_merged_block_size)));
+        vec.push_back(Param("limit",std::to_string(pv60.limit)));
+        
+        return vec;
+    }
     MergeSorterSource(const Block & header, Chunks chunks, SortDescription & description, size_t max_merged_block_size, UInt64 limit)
         : ISource(header), merge_sorter(header, std::move(chunks), description, max_merged_block_size, limit)
     {
+        pv60.header = header;
+        pv60.max_merged_block_size = max_merged_block_size;
+        pv60.limit = limit;
+        size_t num1 = 0,num2 = 0;
+        for(const Chunk& b:chunks){
+            num1 += b.getNumRows();
+            num2 += b.getNumColumns();
+        }
+        pv60.chunks_rows_sum = num1;
+        pv60.chunks_columns_sum = num2;
     }
 
     String getName() const override { return "MergeSorterSource"; }
@@ -63,6 +102,19 @@ private:
 class SortingTransform : public IProcessor
 {
 public:
+    ParaVal60 pv602 = ParaVal60();
+    std::vector<Param> getParaList() override{
+        // ParaVal pv60 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(pv602.header.rows())));
+        vec.push_back(Param("colomns",std::to_string(pv602.header.columns())));
+        vec.push_back(Param("max_merged_block_size",std::to_string(pv602.max_merged_block_size)));
+        vec.push_back(Param("limit",std::to_string(pv602.limit)));
+        vec.push_back(Param("increase_sort_description_compile_attempts",std::to_string(pv602.increase_sort_description_compile_attempts)));
+        
+        return vec;
+    }
     /// limit - if not 0, allowed to return just first 'limit' rows in sorted order.
     SortingTransform(const Block & header,
         const SortDescription & description_,

@@ -21,6 +21,11 @@ DistinctSortedChunkTransform::DistinctSortedChunkTransform(
     , sorted_columns_descr(sorted_columns_descr_)
     , sorted_stream(sorted_stream_)
 {
+    pv36.header = header_;
+    pv36.limit_hint = limit_hint_;
+    pv36.output_size_limits = output_size_limits_;
+    pv36.source_columns = source_columns;
+    pv36.sorted_stream = sorted_stream_;
     /// calculate sorted columns positions
     sorted_columns_pos.reserve(sorted_columns_descr.size());
     for (auto const & descr : sorted_columns_descr)

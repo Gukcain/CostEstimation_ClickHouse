@@ -11,7 +11,8 @@ IInflatingTransform::IInflatingTransform(Block input_header, Block output_header
     : IProcessor({std::move(input_header)}, {std::move(output_header)})
     , input(inputs.front()), output(outputs.front())
 {
-
+    in2 = input_header;
+    out2 = output_header;
 }
 
 IInflatingTransform::Status IInflatingTransform::prepare()

@@ -10,6 +10,9 @@ ISimpleTransform::ISimpleTransform(Block input_header_, Block output_header_, bo
     , output(outputs.front())
     , skip_empty_chunks(skip_empty_chunks_)
 {
+    i = input_header_;
+    o = output_header_;
+    skip = skip_empty_chunks_;
 }
 
 ISimpleTransform::Status ISimpleTransform::prepare()

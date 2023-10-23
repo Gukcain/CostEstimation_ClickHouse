@@ -8,6 +8,21 @@
 
 namespace DB
 {
+// using namespace std;
+class ParaVal36{
+    public:
+        // T value;
+
+        // const Block
+        Block header;
+        // SortDescription description;
+        SizeLimits output_size_limits;
+        UInt64 limit_hint;
+        Names source_columns;
+        bool sorted_stream;
+        
+        // ParaVal36();
+};
 ///
 /// DISTINCT optimization for sorted chunks
 ///
@@ -26,6 +41,24 @@ namespace DB
 ///
 class DistinctSortedChunkTransform : public ISimpleTransform
 {
+    ParaVal36 pv36 = ParaVal36();
+    std::vector<Param> getParaList() override{
+        // ParaVal pv36 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(pv36.header.rows())));
+        vec.push_back(Param("colomns",std::to_string(pv36.header.columns())));
+        vec.push_back(Param("limit_hint",std::to_string(pv36.limit_hint)));
+        vec.push_back(Param("sorted_stream",std::to_string(pv36.sorted_stream)));
+        String str;
+        for(const auto & key : pv36.source_columns){
+            str += key;
+        }
+        vec.push_back(Param("source_columns", str));
+        vec.push_back(Param("size_limits-max_rows",std::to_string(pv36.output_size_limits.max_rows)));
+        vec.push_back(Param("size_limits-max_bytes",std::to_string(pv36.output_size_limits.max_bytes)));
+        return vec;
+    }
 public:
     DistinctSortedChunkTransform(
         const Block & header_,

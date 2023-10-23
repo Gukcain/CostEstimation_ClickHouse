@@ -4,7 +4,22 @@
 
 namespace DB
 {
+// using namespace std;
+class ParaVal43{
+    public:
+        // T value;
 
+        // const Block
+        Block header;
+        // SortDescription description;
+        
+        bool skip_empty_chunks = true;
+        String filter_column_name;
+        bool remove_filter_column;
+        bool on_totals = false;
+        
+        // ParaVal43();
+};
 class ExpressionActions;
 using ExpressionActionsPtr = std::shared_ptr<ExpressionActions>;
 
@@ -18,6 +33,17 @@ class ActionsDAG;
 class FilterTransform : public ISimpleTransform
 {
 public:
+    ParaVal43 pv43 = ParaVal43();
+    std::vector<Param> getParaList() override{
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(pv43.header.rows())));
+        vec.push_back(Param("colomns",std::to_string(pv43.header.columns())));
+        vec.push_back(Param("skip_empty_chunks",std::to_string(pv43.skip_empty_chunks)));
+        vec.push_back(Param("filter_column_name", filter_column_name));
+        vec.push_back(Param("remove_filter_column",std::to_string(pv43.remove_filter_column)));
+        vec.push_back(Param("on_totals",std::to_string(pv43.on_totals)));
+        return vec;
+    }
     FilterTransform(
         const Block & header_, ExpressionActionsPtr expression_, String filter_column_name_,
         bool remove_filter_column_, bool on_totals_ = false, std::shared_ptr<std::atomic<size_t>> rows_filtered_ = nullptr);

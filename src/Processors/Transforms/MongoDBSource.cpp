@@ -3,11 +3,8 @@
 #include <string>
 #include <vector>
 
-#include <Common/logger_useful.h>
 #include <Poco/MongoDB/Connection.h>
 #include <Poco/MongoDB/Cursor.h>
-#include <Poco/MongoDB/Element.h>
-#include <Poco/MongoDB/Database.h>
 #include <Poco/MongoDB/ObjectId.h>
 
 #include <Columns/ColumnNullable.h>
@@ -18,7 +15,6 @@
 #include <Common/quoteString.h>
 #include <base/range.h>
 #include <Poco/URI.h>
-#include <Poco/Util/AbstractConfiguration.h>
 #include <Poco/Version.h>
 
 // only after poco
@@ -161,6 +157,8 @@ MongoDBSource::MongoDBSource(
     , cursor{std::move(cursor_)}
     , max_block_size{max_block_size_}
 {
+    pv55.header = sample_block;
+    pv55.max_block_size = max_block_size_;
     description.init(sample_block);
 }
 
@@ -184,7 +182,7 @@ namespace
                 break;
             case Poco::MongoDB::ElementTraits<Poco::Int64>::TypeId:
                 assert_cast<ColumnVector<T> &>(column).getData().push_back(
-                    static_cast<const Poco::MongoDB::ConcreteElement<Poco::Int64> &>(value).value());
+                    static_cast<T>(static_cast<const Poco::MongoDB::ConcreteElement<Poco::Int64> &>(value).value()));
                 break;
             case Poco::MongoDB::ElementTraits<Float64>::TypeId:
                 assert_cast<ColumnVector<T> &>(column).getData().push_back(static_cast<T>(
@@ -282,7 +280,7 @@ namespace
                                     ErrorCodes::TYPE_MISMATCH};
 
                 assert_cast<ColumnUInt32 &>(column).getData().push_back(
-                    static_cast<const Poco::MongoDB::ConcreteElement<Poco::Timestamp> &>(value).value().epochTime());
+                    static_cast<UInt32>(static_cast<const Poco::MongoDB::ConcreteElement<Poco::Timestamp> &>(value).value().epochTime()));
                 break;
             }
             case ValueType::vtUUID:

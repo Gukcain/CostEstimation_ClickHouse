@@ -3,6 +3,12 @@
 #include <Common/Stopwatch.h>
 #include <Interpreters/OpenTelemetrySpanLog.h>
 
+#include <Interpreters/RandomGenerate.h>
+#include <fstream>
+#include <Processors/IProcessor.h>
+#include <Parsers/HasQuery.h>
+// using namespace std;
+
 namespace DB
 {
 
@@ -44,7 +50,20 @@ static void executeJob(ExecutingGraph::Node * node, ReadProgressCallback * read_
 {
     try
     {
-        node->processor->work();
+        // 改 05-12
+        // double random_test = formData(); 
+        // ofstream location_out;
+        // location_out.open("RandomTest.txt", std::ios::out | std::ios::app); 
+        // location_out << "进入了ExecutionThreadContext::executeJob，将执行processor:"<< node->processor->getName()<<"，线程id为"<<this_thread::get_id()<<"，随机数值为"<<random_test<<endl;
+        // location_out << random_test << endl;
+        // location_out.close();
+
+        node->processor->workInterface();
+        
+        // location_out.open("RandomTest.txt", std::ios::out | std::ios::app); 
+        // location_out << "在ExecutionThreadContext::executeJob中，执行完processor:"<< node->processor->getName()<<"，线程id为"<<this_thread::get_id()<<"，随机数值为"<<random_test<<endl;
+        // location_out << random_test << endl;
+        // location_out.close();
 
         /// Update read progress only for source nodes.
         bool is_source = node->back_edges.empty();

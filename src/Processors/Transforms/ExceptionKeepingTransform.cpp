@@ -17,6 +17,9 @@ ExceptionKeepingTransform::ExceptionKeepingTransform(const Block & in_header, co
     , input(inputs.front()), output(outputs.front())
     , ignore_on_start_and_finish(ignore_on_start_and_finish_)
 {
+    pv_x.in_header = in_header;
+    pv_x.out_header = out_header;
+    pv_x.ignore_on_start_and_finish = ignore_on_start_and_finish_;
 }
 
 IProcessor::Status ExceptionKeepingTransform::prepare()

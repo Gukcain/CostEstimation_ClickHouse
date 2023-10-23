@@ -12,6 +12,8 @@ IAccumulatingTransform::IAccumulatingTransform(Block input_header, Block output_
     : IProcessor({std::move(input_header)}, {std::move(output_header)}),
     input(inputs.front()), output(outputs.front())
 {
+    in1 = input_header;
+    out = output_header;
 }
 
 InputPort * IAccumulatingTransform::addTotalsPort()

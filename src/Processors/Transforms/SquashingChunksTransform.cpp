@@ -9,6 +9,10 @@ SquashingChunksTransform::SquashingChunksTransform(
     : ExceptionKeepingTransform(header, header, false)
     , squashing(min_block_size_rows, min_block_size_bytes)
 {
+    pv61.header = header;
+    pv61.min_block_size_bytes = min_block_size_bytes;
+    pv61.min_block_size_rows = min_block_size_rows;
+    pv61.ignore_on_start_and_finish = false;
 }
 
 void SquashingChunksTransform::onConsume(Chunk chunk)

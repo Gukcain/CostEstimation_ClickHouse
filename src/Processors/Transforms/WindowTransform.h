@@ -84,9 +84,35 @@ struct RowNumber
  *
  * `final` is so that the isCancelled() is devirtualized, we call it every row.
  */
+// using namespace std;
+class ParaVal66{
+    public:
+        // T value;
+
+        // const Block
+        Block in_header;
+        Block out_header;
+        // bool ignore_on_start_and_finish = true;
+        WindowDescription wd;
+        
+        // ParaVal66();
+};
 class WindowTransform final : public IProcessor
 {
 public:
+    ParaVal66 pv66 = ParaVal66();
+    std::vector<Param> getParaList() override{
+        // ParaVal pv66 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows_in",std::to_string(pv66.in_header.rows())));
+        vec.push_back(Param("colomns_In",std::to_string(pv66.in_header.columns())));
+        vec.push_back(Param("rows_out",std::to_string(pv66.out_header.rows())));
+        vec.push_back(Param("colomns_out",std::to_string(pv66.out_header.columns())));
+        vec.push_back(Param("window_name",pv66.wd.window_name));
+        
+        return vec;
+    }
     WindowTransform(
             const Block & input_header_,
             const Block & output_header_,

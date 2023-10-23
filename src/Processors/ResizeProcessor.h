@@ -6,6 +6,19 @@
 
 namespace DB
 {
+class ParaVal73{
+    public:
+        // T value;
+
+        // const Block
+        Block header;
+        size_t num_inputs;
+        size_t num_outputs;
+
+        // ParaVal73();
+};
+// using namespace std;
+// template <typename T>
 
 /** Has arbitrary non zero number of inputs and arbitrary non zero number of outputs.
   * All of them have the same structure.
@@ -21,12 +34,27 @@ namespace DB
 class ResizeProcessor : public IProcessor
 {
 public:
+
+    ParaVal73 pv73 = ParaVal73();
+    std::vector<Param> getParaList() override{
+        // ParaVal pv73 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(pv73.header.rows())));
+        vec.push_back(Param("colomns",std::to_string(pv73.header.columns())));
+        vec.push_back(Param("num_inputs",std::to_string(pv73.num_inputs)));
+        vec.push_back(Param("num_outputs",std::to_string(pv73.num_outputs)));
+        return vec;
+    }
     /// TODO Check that there is non zero number of inputs and outputs.
     ResizeProcessor(const Block & header, size_t num_inputs, size_t num_outputs)
         : IProcessor(InputPorts(num_inputs, header), OutputPorts(num_outputs, header))
         , current_input(inputs.begin())
         , current_output(outputs.begin())
     {
+        pv73.header = header;
+        pv73.num_inputs = num_inputs;
+        pv73.num_outputs = num_outputs;
     }
 
     String getName() const override { return "Resize"; }

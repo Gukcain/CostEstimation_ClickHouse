@@ -32,6 +32,8 @@ CheckConstraintsTransform::CheckConstraintsTransform(
     , constraints_to_check(constraints_.filterConstraints(ConstraintsDescription::ConstraintType::CHECK))
     , expressions(constraints_.getExpressions(context_, header.getNamesAndTypesList()))
 {
+    pv28.header = header;
+    pv28.sid = table_id_;
 }
 
 

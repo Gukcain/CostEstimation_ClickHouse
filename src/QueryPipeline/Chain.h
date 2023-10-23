@@ -2,7 +2,7 @@
 
 #include <Interpreters/Context_fwd.h>
 #include <Processors/IProcessor.h>
-#include <QueryPipeline/PipelineResourcesHolder.h>
+#include <QueryPipeline/QueryPlanResourceHolder.h>
 
 namespace DB
 {
@@ -23,7 +23,9 @@ public:
     bool empty() const { return processors.empty(); }
 
     size_t getNumThreads() const { return num_threads; }
-    void setNumThreads(size_t num_threads_) { num_threads = num_threads_; }
+    // 改 05-01
+    // void setNumThreads(size_t num_threads_) { num_threads = num_threads_; }
+    void setNumThreads(size_t num_threads_) { num_threads_ = 1;num_threads = num_threads_; }
 
     void addSource(ProcessorPtr processor);
     void addSink(ProcessorPtr processor);
@@ -56,7 +58,9 @@ private:
     ///  ^        ->           ->     ->           ->       ^
     ///  input port                               output port
     std::list<ProcessorPtr> processors;
-    size_t num_threads = 0;
+    // 改 05-01
+    // size_t num_threads = 0;
+    size_t num_threads = 1;
 };
 
 }

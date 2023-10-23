@@ -10,6 +10,7 @@
 
 namespace DB
 {
+// using namespace std;
 
 struct StreamSettings
 {
@@ -19,15 +20,43 @@ struct StreamSettings
     bool auto_close;
     bool fetch_by_name;
     size_t default_num_tries_on_connection_loss;
-
+    StreamSettings()=default;
     StreamSettings(const Settings & settings, bool auto_close_ = false, bool fetch_by_name_ = false, size_t max_retry_ = 5);
 
+};
+class ParaVal16{
+    public:
+        // T value;
+
+        // const Block
+        Block header;
+        bool enable_auto_progress = true;
+        String query_str;
+        StreamSettings ss;
+
+        // ParaVal16();
 };
 
 /// Allows processing results of a MySQL query as a sequence of Blocks, simplifies chaining
 class MySQLSource : public ISource
 {
 public:
+ParaVal16 pv16 = ParaVal16();
+    std::vector<Param> getParaList() override{
+        // ParaVal pv16 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(pv16.header.rows())));
+        vec.push_back(Param("colomns",std::to_string(pv16.header.columns())));
+        vec.push_back(Param("enable_auto_progress",std::to_string(pv16.enable_auto_progress)));
+        vec.push_back(Param("query_str",pv16.query_str));
+        vec.push_back(Param("max_read_mysql_row_nums",std::to_string(pv16.ss.max_read_mysql_row_nums)));
+        vec.push_back(Param("max_read_mysql_bytes_size",std::to_string(pv16.ss.max_read_mysql_bytes_size)));
+        vec.push_back(Param("auto_close",std::to_string(pv16.ss.auto_close)));
+        vec.push_back(Param("default_num_tries_on_connection_loss",std::to_string(pv16.ss.default_num_tries_on_connection_loss)));
+        vec.push_back(Param("fetch_by_name",std::to_string(pv16.ss.fetch_by_name)));
+        return vec;
+    }
     MySQLSource(
         const mysqlxx::PoolWithFailover::Entry & entry,
         const std::string & query_str,

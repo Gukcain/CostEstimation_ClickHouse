@@ -1,10 +1,11 @@
 #pragma once
-
+#include <Storages/StorageMergeTree.h>
 #include <Storages/MergeTree/IExecutableTask.h>
 #include <Storages/MergeTree/MergeTask.h>
 #include <Storages/MutationCommands.h>
 #include <Storages/MergeTree/MergeMutateSelectedEntry.h>
 #include <Interpreters/MergeTreeTransactionHolder.h>
+
 
 namespace DB
 {
@@ -66,7 +67,7 @@ private:
     StorageMetadataPtr metadata_snapshot;
     bool deduplicate;
     Names deduplicate_by_columns;
-    std::shared_ptr<MergeMutateSelectedEntry> merge_mutate_entry{nullptr};
+    MergeMutateSelectedEntryPtr merge_mutate_entry{nullptr};
     TableLockHolder table_lock_holder;
     FutureMergedMutatedPartPtr future_part{nullptr};
     MergeTreeData::MutableDataPartPtr new_part;

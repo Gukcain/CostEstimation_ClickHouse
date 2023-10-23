@@ -155,6 +155,10 @@ SortingTransform::SortingTransform(
     , max_merged_block_size(max_merged_block_size_)
     , limit(limit_)
 {
+    pv602.header = header;
+    pv602.max_merged_block_size = max_merged_block_size_;
+    pv602.limit = limit_;
+    pv602.increase_sort_description_compile_attempts = increase_sort_description_compile_attempts;
     const auto & sample = inputs.front().getHeader();
 
     /// Remove constants from header and map old indexes to new.

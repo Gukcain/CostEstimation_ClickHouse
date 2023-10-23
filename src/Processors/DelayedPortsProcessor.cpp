@@ -43,6 +43,9 @@ DelayedPortsProcessor::DelayedPortsProcessor(
                  OutputPorts((assert_main_ports_empty ? delayed_ports.size() : num_ports), header))
     , num_delayed_ports(delayed_ports.size())
 {
+    pv68.header = header;
+    pv68.num_ports = num_ports;
+    pv68.assert_main_ports_empty = assert_main_ports_empty;
     port_pairs.resize(num_ports);
     output_to_pair.reserve(outputs.size());
 

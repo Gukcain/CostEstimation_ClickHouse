@@ -7,6 +7,7 @@ namespace DB
 ISink::ISink(Block header)
     : IProcessor({std::move(header)}, {}), input(inputs.front())
 {
+    i_sink_header = header;
 }
 
 ISink::Status ISink::prepare()

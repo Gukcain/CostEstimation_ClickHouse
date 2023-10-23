@@ -1,15 +1,33 @@
 #pragma once
 #include <Processors/IProcessor.h>
+#include "Interpreters/IJoin.h"
 
 
 namespace DB
 {
+// using namespace std;
 
 class IJoin;
 using JoinPtr = std::shared_ptr<IJoin>;
 
 class NotJoinedBlocks;
+class IBlocksStream;
+using IBlocksStreamPtr = std::shared_ptr<IBlocksStream>;
+class ParaVal46{
+    public:
+        // T value;
 
+        // const Block
+        Block input_header;
+        Block output_header;
+        JoinPtr join;
+        size_t max_block_size;
+        bool on_totals = false;
+        bool default_totals = false;
+        size_t num_streams;
+        
+        // ParaVal46();
+};
 /// Join rows to chunk form left table.
 /// This transform usually has two input ports and one output.
 /// First input is for data from left table.
@@ -38,6 +56,35 @@ public:
 
     using FinishCounterPtr = std::shared_ptr<FinishCounter>;
 
+    ParaVal46 pv461 = ParaVal46();
+    std::vector<Param> getParaList() override{
+        // ParaVal pv461 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows_input",std::to_string(pv461.input_header.rows())));
+        vec.push_back(Param("colomns_input",std::to_string(pv461.input_header.columns())));
+        vec.push_back(Param("rows_output",std::to_string(pv461.output_header.rows())));
+        vec.push_back(Param("colomns_output",std::to_string(pv461.output_header.columns())));
+        vec.push_back(Param("default_totals",std::to_string(pv461.default_totals)));
+        vec.push_back(Param("on_totals", std::to_string(pv461.on_totals)));
+        vec.push_back(Param("max_block_size",std::to_string(pv461.max_block_size)));
+        if(join){
+            vec.push_back(Param("total_row_count_in_memory",std::to_string(join.get()->getTotalRowCount())));
+            vec.push_back(Param("total_byte_count_in_memory",std::to_string(join.get()->getTotalByteCount())));
+            String str;
+            if(join.get()->pipelineType()==JoinPipelineType::FilledRight){
+                str = "FilledRight";
+            }else if(join.get()->pipelineType()==JoinPipelineType::FillRightFirst){
+                str = "FillRightFirst";
+            }else if(join.get()->pipelineType()==JoinPipelineType::YShaped){
+                str = "YShaped";
+            }
+            vec.push_back(Param("joinPipelineType",str));
+        }
+        
+        
+        return vec;
+    }
     JoiningTransform(
         const Block & input_header,
         const Block & output_header,
@@ -47,9 +94,13 @@ public:
         bool default_totals_ = false,
         FinishCounterPtr finish_counter_ = nullptr);
 
+    ~JoiningTransform() override;
+
     String getName() const override { return "JoiningTransform"; }
 
     static Block transformHeader(Block header, const JoinPtr & join);
+
+    OutputPort & getFinishedSignal();
 
     Status prepare() override;
     void work() override;
@@ -76,7 +127,7 @@ private:
     ExtraBlockPtr not_processed;
 
     FinishCounterPtr finish_counter;
-    std::shared_ptr<NotJoinedBlocks> non_joined_blocks;
+    IBlocksStreamPtr non_joined_blocks;
     size_t max_block_size;
 
     Block readExecute(Chunk & chunk);
@@ -88,6 +139,31 @@ private:
 class FillingRightJoinSideTransform : public IProcessor
 {
 public:
+    ParaVal46 pv462 = ParaVal46();
+    std::vector<Param> getParaList() override{
+        // ParaVal pv462 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows_input",std::to_string(pv462.input_header.rows())));
+        vec.push_back(Param("colomns_input",std::to_string(pv462.input_header.columns())));
+        if(pv462.join){
+            vec.push_back(Param("total_row_count_in_memory",std::to_string(pv462.join.get()->getTotalRowCount())));
+            vec.push_back(Param("total_byte_count_in_memory",std::to_string(pv462.join.get()->getTotalByteCount())));
+            String str;
+            if(pv462.join.get()->pipelineType()==JoinPipelineType::FilledRight){
+                str = "FilledRight";
+            }else if(pv462.join.get()->pipelineType()==JoinPipelineType::FillRightFirst){
+                str = "FillRightFirst";
+            }else if(pv462.join.get()->pipelineType()==JoinPipelineType::YShaped){
+                str = "YShaped";
+            }
+            vec.push_back(Param("joinPipelineType",str));
+        }
+        
+        
+        
+        return vec;
+    }
     FillingRightJoinSideTransform(Block input_header, JoinPtr join_);
     String getName() const override { return "FillingRightJoinSide"; }
 
@@ -102,6 +178,81 @@ private:
     bool stop_reading = false;
     bool for_totals = false;
     bool set_totals = false;
+};
+
+
+class DelayedBlocksTask : public ChunkInfo
+{
+public:
+
+    explicit DelayedBlocksTask() : finished(true) {}
+    explicit DelayedBlocksTask(IBlocksStreamPtr delayed_blocks_) : delayed_blocks(std::move(delayed_blocks_)) {}
+
+    IBlocksStreamPtr delayed_blocks = nullptr;
+
+    bool finished = false;
+};
+
+using DelayedBlocksTaskPtr = std::shared_ptr<const DelayedBlocksTask>;
+
+
+/// Reads delayed joined blocks from Join
+class DelayedJoinedBlocksTransform : public IProcessor
+{
+public:
+    ParaVal46 pv463 = ParaVal46();
+    std::vector<Param> getParaList() override{
+        // ParaVal pv463 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("num_streams",std::to_string(pv463.num_streams)));
+        if(pv463.join){
+            vec.push_back(Param("total_row_count_in_memory",std::to_string(pv463.join.get()->getTotalRowCount())));
+            vec.push_back(Param("total_byte_count_in_memory",std::to_string(pv463.join.get()->getTotalByteCount())));
+            String str;
+            if(pv463.join.get()->pipelineType()==JoinPipelineType::FilledRight){
+                str = "FilledRight";
+            }else if(pv463.join.get()->pipelineType()==JoinPipelineType::FillRightFirst){
+                str = "FillRightFirst";
+            }else if(pv463.join.get()->pipelineType()==JoinPipelineType::YShaped){
+                str = "YShaped";
+            }
+            vec.push_back(Param("joinPipelineType",str));
+        }
+        
+        
+        
+        return vec;
+    }
+    explicit DelayedJoinedBlocksTransform(size_t num_streams, JoinPtr join_);
+
+    String getName() const override { return "DelayedJoinedBlocksTransform"; }
+
+    Status prepare() override;
+    void work() override;
+
+private:
+    JoinPtr join;
+
+    IBlocksStreamPtr delayed_blocks = nullptr;
+    bool finished = false;
+};
+
+class DelayedJoinedBlocksWorkerTransform : public IProcessor
+{
+public:
+    explicit DelayedJoinedBlocksWorkerTransform(Block output_header);
+
+    String getName() const override { return "DelayedJoinedBlocksWorkerTransform"; }
+
+    Status prepare() override;
+    void work() override;
+
+private:
+    DelayedBlocksTaskPtr task;
+    Chunk output_chunk;
+
+    bool finished = false;
 };
 
 }

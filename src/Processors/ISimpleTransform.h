@@ -37,12 +37,27 @@ protected:
     void stopReading() { no_more_data_needed = true; }
 
 public:
+    Block i;
+    Block o;
+    bool skip;
     ISimpleTransform(Block input_header_, Block output_header_, bool skip_empty_chunks_);
 
     virtual void transform(Chunk &) = 0;
 
     Status prepare() override;
     void work() override;
+    std::vector<Param> getParaList() override{
+        // ParaVal pv73 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows_input",std::to_string(i.rows())));
+        vec.push_back(Param("colomns_input",std::to_string(i.columns())));
+        vec.push_back(Param("rows_output",std::to_string(o.rows())));
+        vec.push_back(Param("colomns_output",std::to_string(o.columns())));
+        vec.push_back(Param("skip_empty_chunks",std::to_string(skip)));
+        // vec.push_back(Param("num_outputs",std::to_string(pv73.num_outputs)));
+        return vec;
+    }
 
     InputPort & getInputPort() { return input; }
     OutputPort & getOutputPort() { return output; }

@@ -7,7 +7,20 @@
 
 namespace DB
 {
+// using namespace std;
+// template <typename T>
+class ParaVal18{
+    public:
+        // T value;
 
+        // const Block
+        Block header;
+        bool enable_auto_progress = true;
+        bool add_aggregation_info;
+        bool async_read;
+
+        // ParaVal18();
+};
 class RemoteQueryExecutor;
 using RemoteQueryExecutorPtr = std::shared_ptr<RemoteQueryExecutor>;
 
@@ -17,6 +30,18 @@ class RemoteQueryExecutorReadContext;
 class RemoteSource : public ISource
 {
 public:
+ParaVal18 pv18 = ParaVal18();
+    std::vector<Param> getParaList() override{
+        // ParaVal pv18 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(pv18.header.rows())));
+        vec.push_back(Param("colomns",std::to_string(pv18.header.columns())));
+        vec.push_back(Param("enable_auto_progress",std::to_string(pv18.enable_auto_progress)));
+        vec.push_back(Param("add_aggregation_info",std::to_string(pv18.add_aggregation_info)));
+        vec.push_back(Param("async_read",std::to_string(pv18.async_read)));
+        return vec;
+    }
     /// Flag add_aggregation_info tells if AggregatedChunkInfo should be added to result chunk.
     /// AggregatedChunkInfo stores the bucket number used for two-level aggregation.
     /// This flag should be typically enabled for queries with GROUP BY which are executed till WithMergeableState.
@@ -56,6 +81,16 @@ private:
 class RemoteTotalsSource : public ISource
 {
 public:
+    ParaVal18 pv18 = ParaVal18();
+    std::vector<Param> getParaList() override{
+        // ParaVal pv18 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(pv18.header.rows())));
+        vec.push_back(Param("colomns",std::to_string(pv18.header.columns())));
+        vec.push_back(Param("enable_auto_progress",std::to_string(pv18.enable_auto_progress)));
+        return vec;
+    }
     explicit RemoteTotalsSource(RemoteQueryExecutorPtr executor);
     ~RemoteTotalsSource() override;
 
@@ -72,6 +107,16 @@ private:
 class RemoteExtremesSource : public ISource
 {
 public:
+    ParaVal18 pv18 = ParaVal18();
+    std::vector<Param> getParaList() override{
+        // ParaVal pv18 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(pv18.header.rows())));
+        vec.push_back(Param("colomns",std::to_string(pv18.header.columns())));
+        vec.push_back(Param("enable_auto_progress",std::to_string(pv18.enable_auto_progress)));
+        return vec;
+    }
     explicit RemoteExtremesSource(RemoteQueryExecutorPtr executor);
     ~RemoteExtremesSource() override;
 

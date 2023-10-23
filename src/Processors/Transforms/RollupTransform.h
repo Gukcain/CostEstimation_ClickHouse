@@ -7,9 +7,41 @@
 
 namespace DB
 {
+// using namespace std;
+class ParaVal59{
+    public:
+        // T value;
 
+        // const Block
+        Block header;
+        // SortDescription description;
+        bool use_nulls;
+        AggregatingTransformParamsPtr ptr;
+        
+        // ParaVal59();
+};
 struct GroupByModifierTransform : public IAccumulatingTransform
 {
+    ParaVal59 pv59 = ParaVal59();
+    std::vector<Param> getParaList() override{
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(pv59.header.rows())));
+        vec.push_back(Param("colomns",std::to_string(pv59.header.columns())));
+        vec.push_back(Param("use_nulls", std::to_string(pv59.use_nulls)));
+        if(pv59.ptr){
+            String str;
+            for(const auto & key : pv59.ptr.get()->params.keys){
+                str += key;
+            }
+            vec.push_back(Param("keys", str));
+            vec.push_back(Param("keys_size", std::to_string(pv59.ptr.get()->params.keys_size)));
+            vec.push_back(Param("aggregates_size", std::to_string(pv59.ptr.get()->params.aggregates_size)));
+            vec.push_back(Param("max_rows_to_group_by", std::to_string(pv59.ptr.get()->params.max_rows_to_group_by)));
+            vec.push_back(Param("min_free_disk_space", std::to_string(pv59.ptr.get()->params.min_free_disk_space)));
+        }
+        
+        return vec;
+    }
     GroupByModifierTransform(Block header, AggregatingTransformParamsPtr params_, bool use_nulls_);
 
 protected:
@@ -40,6 +72,24 @@ protected:
 class RollupTransform : public GroupByModifierTransform
 {
 public:
+    std::vector<Param> getParaList() override{
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(pv59.header.rows())));
+        vec.push_back(Param("colomns",std::to_string(pv59.header.columns())));
+        vec.push_back(Param("use_nulls", std::to_string(pv59.use_nulls)));
+        if(pv59.ptr){
+            String str;
+            for(const auto & key : pv59.ptr.get()->params.keys){
+                str += key;
+            }
+            vec.push_back(Param("keys", str));
+            vec.push_back(Param("keys_size", std::to_string(pv59.ptr.get()->params.keys_size)));
+            vec.push_back(Param("aggregates_size", std::to_string(pv59.ptr.get()->params.aggregates_size)));
+            vec.push_back(Param("max_rows_to_group_by", std::to_string(pv59.ptr.get()->params.max_rows_to_group_by)));
+            vec.push_back(Param("min_free_disk_space", std::to_string(pv59.ptr.get()->params.min_free_disk_space)));
+        }
+        return vec;
+    }
     RollupTransform(Block header, AggregatingTransformParamsPtr params, bool use_nulls_);
     String getName() const override { return "RollupTransform"; }
 

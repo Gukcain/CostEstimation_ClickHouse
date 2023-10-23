@@ -17,6 +17,10 @@ DistinctTransform::DistinctTransform(
     , limit_hint(limit_hint_)
     , set_size_limits(set_size_limits_)
 {
+    pv38.set_size_limits = set_size_limits_;
+    pv38.header = header_;
+    pv38.limit_hint = limit_hint_;
+    pv38.source_columns = columns_;
     const size_t num_columns = columns_.empty() ? header_.columns() : columns_.size();
     key_columns_pos.reserve(num_columns);
     for (size_t i = 0; i < num_columns; ++i)

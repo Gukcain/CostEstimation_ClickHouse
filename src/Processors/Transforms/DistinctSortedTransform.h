@@ -8,7 +8,21 @@
 
 namespace DB
 {
+// using namespace std;
+class ParaVal37{
+    public:
+        // T value;
 
+        // const Block
+        Block header;
+        // SortDescription description;
+        SizeLimits set_size_limits;
+        UInt64 limit_hint;
+        Names source_columns;
+        bool skip_empty_chunks = false;
+        
+        // ParaVal37();
+};
 /** This class is intended for implementation of SELECT DISTINCT clause and
   * leaves only unique rows in the stream.
   *
@@ -25,6 +39,24 @@ namespace DB
 class DistinctSortedTransform : public ISimpleTransform
 {
 public:
+    ParaVal37 pv37 = ParaVal37();
+    std::vector<Param> getParaList() override{
+        // ParaVal pv37 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(pv37.header.rows())));
+        vec.push_back(Param("colomns",std::to_string(pv37.header.columns())));
+        vec.push_back(Param("limit_hint",std::to_string(pv37.limit_hint)));
+        vec.push_back(Param("skip_empty_chunks",std::to_string(pv37.skip_empty_chunks)));
+        String str;
+        for(const auto & key : pv37.source_columns){
+            str += key;
+        }
+        vec.push_back(Param("column_names", str));
+        vec.push_back(Param("size_limits-max_rows",std::to_string(pv37.set_size_limits.max_rows)));
+        vec.push_back(Param("size_limits-max_bytes",std::to_string(pv37.set_size_limits.max_bytes)));
+        return vec;
+    }
     /// Empty columns_ means all columns.
     DistinctSortedTransform(
         const Block & header,

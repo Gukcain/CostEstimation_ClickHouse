@@ -102,9 +102,41 @@ private:
     UInt64 merged_bytes = 0;
 };
 
+// using namespace std;
+// template <typename T>
+class ParaVal30{
+    public:
+        // T value;
+
+        // const Block
+        Block header;
+        // SortDescription description;
+        size_t num_inputs;
+        // SortDescription description;
+        // Block & input_header;
+        // Block & output_header;
+        bool have_all_inputs = true;
+        UInt64 limit_hint = 0;
+        size_t block_preferred_size = DEFAULT_BLOCK_SIZE;
+        
+        // ParaVal30();
+};
 class ColumnGathererTransform final : public IMergingTransform<ColumnGathererStream>
 {
 public:
+    ParaVal30 pv30 = ParaVal30();
+    std::vector<Param> getParaList() override{
+        // ParaVal pv30 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(pv30.header.rows())));
+        vec.push_back(Param("colomns",std::to_string(pv30.header.columns())));
+        vec.push_back(Param("num_inputs", std::to_string(pv30.num_inputs)));
+        vec.push_back(Param("have_all_inputs", std::to_string(pv30.have_all_inputs)));
+        vec.push_back(Param("limit_hint", std::to_string(pv30.limit_hint)));
+        vec.push_back(Param("block_preferred_size", std::to_string(pv30.block_preferred_size)));
+        return vec;
+    }
     ColumnGathererTransform(
         const Block & header,
         size_t num_inputs,

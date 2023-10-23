@@ -1,4 +1,4 @@
-#include "config_core.h"
+#include "config.h"
 
 #if USE_MYSQL
 #include <vector>
@@ -60,6 +60,9 @@ MySQLSource::MySQLSource(
     , connection{std::make_unique<Connection>(entry, query_str)}
     , settings{std::make_unique<StreamSettings>(settings_)}
 {
+    pv16.header = sample_block;
+    pv16.query_str = query_str;
+    pv16.ss = settings_;
     description.init(sample_block);
     initPositionMappingFromQueryResultStructure();
 }
@@ -70,6 +73,9 @@ MySQLSource::MySQLSource(const Block &sample_block_, const StreamSettings & sett
     , log(&Poco::Logger::get("MySQLSource"))
     , settings(std::make_unique<StreamSettings>(settings_))
 {
+    pv16.header = sample_block_;
+    // pv16.query_str = query_str;
+    pv16.ss = settings_;
     description.init(sample_block_);
 }
 
@@ -141,7 +147,7 @@ namespace
                 read_bytes_size += 2;
                 break;
             case ValueType::vtUInt32:
-                assert_cast<ColumnUInt32 &>(column).insertValue(value.getUInt());
+                assert_cast<ColumnUInt32 &>(column).insertValue(static_cast<UInt32>(value.getUInt()));
                 read_bytes_size += 4;
                 break;
             case ValueType::vtUInt64:
@@ -171,7 +177,7 @@ namespace
                 read_bytes_size += 2;
                 break;
             case ValueType::vtInt32:
-                assert_cast<ColumnInt32 &>(column).insertValue(value.getInt());
+                assert_cast<ColumnInt32 &>(column).insertValue(static_cast<Int32>(value.getInt()));
                 read_bytes_size += 4;
                 break;
             case ValueType::vtInt64:
@@ -236,7 +242,7 @@ namespace
                 readDateTimeText(time, in, assert_cast<const DataTypeDateTime &>(data_type).getTimeZone());
                 if (time < 0)
                     time = 0;
-                assert_cast<ColumnUInt32 &>(column).insertValue(time);
+                assert_cast<ColumnUInt32 &>(column).insertValue(static_cast<UInt32>(time));
                 read_bytes_size += 4;
                 break;
             }

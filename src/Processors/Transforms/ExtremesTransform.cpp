@@ -9,6 +9,7 @@ ExtremesTransform::ExtremesTransform(const Block & header)
     : ISimpleTransform(header, header, true)
 {
     /// Port for Extremes.
+    pv40.header = header;
     outputs.emplace_back(outputs.front().getHeader(), this);
 }
 

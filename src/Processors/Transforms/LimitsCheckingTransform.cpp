@@ -22,6 +22,8 @@ LimitsCheckingTransform::LimitsCheckingTransform(const Block & header_, StreamLo
     : ISimpleTransform(header_, header_, false)
     , limits(std::move(limits_))
 {
+    pv48.header = header_;
+    pv48.sl = std::move(limits_);
 }
 
 void LimitsCheckingTransform::transform(Chunk & chunk)

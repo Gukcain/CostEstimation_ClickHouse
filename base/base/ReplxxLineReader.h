@@ -4,7 +4,6 @@
 
 #include <replxx.hxx>
 
-
 class ReplxxLineReader : public LineReader
 {
 public:

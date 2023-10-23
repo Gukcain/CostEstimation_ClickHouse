@@ -1,6 +1,6 @@
 #pragma once
 
-#include "config_core.h"
+#include "config.h"
 
 #if USE_LIBPQXX
 #include <Core/Block.h>
@@ -14,12 +14,38 @@
 
 namespace DB
 {
+// using namespace std;
+// template <typename T>
+class ParaVal57{
+    public:
+        // T value;
 
+        // const Block
+        Block header;
+        UInt64 max_block_size;
+        String query_str;
+        bool auto_commit = true;
+
+        // ParaVal57();
+};
 template <typename T = pqxx::ReadTransaction>
 class PostgreSQLSource : public ISource
 {
 
 public:
+    ParaVal57 pv57 = ParaVal57();
+    std::vector<Param> getParaList() override{
+        // ParaVal pv57 = ParaVal();
+        // vec.push_back(TestC("header", header));
+        std::vector<Param> vec;
+        vec.push_back(Param("rows",std::to_string(pv57.header.rows())));
+        vec.push_back(Param("colomns",std::to_string(pv57.header.columns())));
+        vec.push_back(Param("max_block_size",std::to_string(pv57.max_block_size)));
+        vec.push_back(Param("query_str",pv57.query_str));
+        vec.push_back(Param("auto_commit",std::to_string(pv57.auto_commit)));
+        
+        return vec;
+    }
     PostgreSQLSource(
         postgres::ConnectionHolderPtr connection_holder_,
         const String & query_str_,

@@ -69,6 +69,11 @@ FilterTransform::FilterTransform(
     auto & column = transformed_header.getByPosition(filter_column_position).column;
     if (column)
         constant_filter_description = ConstantFilterDescription(*column);
+    pv43.filter_column_name = filter_column_name_;
+    pv43.header = header_;
+    pv43.remove_filter_column = remove_filter_column_;
+    pv43.on_totals = on_totals_;
+    pv43.skip_empty_chunks = true;
 }
 
 IProcessor::Status FilterTransform::prepare()
