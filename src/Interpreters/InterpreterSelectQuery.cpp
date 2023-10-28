@@ -112,6 +112,7 @@
 
 // using namespace std;
 
+
 namespace DB
 {
 
@@ -795,10 +796,10 @@ BlockIO InterpreterSelectQuery::execute()
     // location_out << "进入了InterperterSelectQuery::execute，随机数值" << random_test << endl;
     // location_out.close();
 
-        std::ofstream os;
-        os.open("ForTest.txt",std::ios::out|std::ios::app);
-        os<<1<<std::endl;
-        os.close();
+        // std::ofstream os;
+        // os.open("ForTest.txt",std::ios::out|std::ios::app);
+        // os<<1<<std::endl;
+        // os.close();
 
     buildQueryPlan(query_plan);
 
@@ -810,9 +811,9 @@ BlockIO InterpreterSelectQuery::execute()
     setQuota(res.pipeline);
     
     // 改 10-19
-    if(HasQuery::hasquery){
-        query_plan.outputPipeline();
-    }
+    // if(HasQuery::hasquery){
+    //     query_plan.outputPipeline();
+    // }
 
     return res;
 }

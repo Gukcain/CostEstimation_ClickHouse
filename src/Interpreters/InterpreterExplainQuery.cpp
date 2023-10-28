@@ -472,12 +472,20 @@ QueryPipeline InterpreterExplainQuery::executeImpl()
                     InterpreterSelectQueryAnalyzer interpreter(ast.getExplainedQuery(), options, getContext());
                     context = interpreter.getContext();
                     plan = std::move(interpreter).extractQueryPlan();
+                    // std::ofstream os;
+                    // os.open("ForTest.txt",std::ios::out|std::ios::app);
+                    // os<<3<<std::endl;
+                    // os.close();
                 }
                 else
                 {
                     InterpreterSelectWithUnionQuery interpreter(ast.getExplainedQuery(), getContext(), options);
                     interpreter.buildQueryPlan(plan);
                     context = interpreter.getContext();
+                    // std::ofstream os;
+                    // os.open("ForTest.txt",std::ios::out|std::ios::app);
+                    // os<<4<<std::endl;
+                    // os.close();
                 }
 
                 auto pipeline = plan.buildQueryPipeline(
@@ -498,6 +506,8 @@ QueryPipeline InterpreterExplainQuery::executeImpl()
                 }
                 else
                 {
+                    // 改 10-26
+                    plan.outputPipeline();
                     plan.explainPipeline(buf, settings.query_pipeline_options);
                 }
             }
@@ -575,6 +585,51 @@ QueryPipeline InterpreterExplainQuery::executeImpl()
     }
 
     return QueryPipeline(std::make_shared<SourceFromSingleChunk>(sample_block.cloneWithColumns(std::move(res_columns))));
+}
+
+void InterpreterExplainQuery::outputPipelineInterface(){
+    ASTPtr query_explain;
+    const auto & ast_explain = query_explain->as<const ASTExplainQuery &>();
+
+    WriteBufferFromOwnString buf;
+
+    SelectQueryOptions options;
+    options.setExplain();
+
+    if (dynamic_cast<const ASTSelectWithUnionQuery *>(ast_explain.getExplainedQuery().get()))
+    {
+        auto settings = checkAndGetSettings<QueryPipelineSettings>(ast_explain.getSettings());
+        QueryPlan plan;
+        ContextPtr context;
+
+        if (getContext()->getSettingsRef().allow_experimental_analyzer)
+        {
+            InterpreterSelectQueryAnalyzer interpreter(ast_explain.getExplainedQuery(), options, getContext());
+            context = interpreter.getContext();
+            plan = std::move(interpreter).extractQueryPlan();
+        }
+        else
+        {
+            InterpreterSelectWithUnionQuery interpreter(ast_explain.getExplainedQuery(), getContext(), options);
+            interpreter.buildQueryPlan(plan);
+            context = interpreter.getContext();
+        }
+
+        auto pipeline = plan.buildQueryPipeline(
+            QueryPlanOptimizationSettings::fromContext(context),
+            BuildQueryPipelineSettings::fromContext(context));
+        
+        plan.outputPipeline();
+        
+    }
+    // else if (dynamic_cast<const ASTInsertQuery *>(ast_explain.getExplainedQuery().get()))
+    // {
+    //     InterpreterInsertQuery insert(ast_explain.getExplainedQuery(), getContext());
+    //     auto io = insert.execute();
+    //     printPipeline(io.pipeline.getProcessors(), buf);
+    // }
+    else
+        throw Exception("Only SELECT and INSERT is supported for EXPLAIN PIPELINE query", ErrorCodes::INCORRECT_QUERY);
 }
 
 }

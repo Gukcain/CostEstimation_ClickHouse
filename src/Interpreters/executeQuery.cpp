@@ -1,3 +1,5 @@
+#include "Interpreters/InterpreterExplainQuery.h"
+#include "Parsers/HasQuery.h"
 #include <Common/formatReadable.h>
 #include <Common/PODArray.h>
 #include <Common/typeid_cast.h>
@@ -75,6 +77,8 @@
 #include <Parsers/Kusto/ParserKQLStatement.h>
 
 #include <fstream>
+#include <string>
+
 // using namespace std;
 
 namespace ProfileEvents
@@ -363,6 +367,10 @@ static std::tuple<ASTPtr, BlockIO> executeQueryImpl(
     String query_for_logging;
     size_t log_queries_cut_to_length = context->getSettingsRef().log_queries_cut_to_length;
 
+    // 改 10-26
+    ASTPtr forpipeline;
+    std::unique_ptr<IInterpreter> output_interpreter;
+
     /// Parse the query from string.
     try
     {
@@ -379,6 +387,14 @@ static std::tuple<ASTPtr, BlockIO> executeQueryImpl(
 
             /// TODO: parser should fail early when max_query_size limit is reached.
             ast = parseQuery(parser, begin, end, "", max_query_size, settings.max_parser_depth);
+            
+            // 改 10-26
+            if(HasQuery::hasquery){
+                const String & query_addexplain = "explain pipeline "+std::string(begin);
+                ParserQuery parser2(query_addexplain.data()+query_addexplain.size(), settings.allow_settings_after_format_in_insert);
+                forpipeline = parseQuery(parser2, query_addexplain.data(), query_addexplain.data()+query_addexplain.size(), "", max_query_size, settings.max_parser_depth);
+            }
+            
         }
 
         const char * query_end = end;
@@ -647,6 +663,13 @@ static std::tuple<ASTPtr, BlockIO> executeQueryImpl(
             }
 
             interpreter = InterpreterFactory::get(ast, context, SelectQueryOptions(stage).setInternal(internal));
+            // 改 10-26 加一个InterpreterExplainQuery用来获取pipelinetree
+            if(DB::HasQuery::hasquery){
+                output_interpreter = InterpreterFactory::get(forpipeline, context, SelectQueryOptions(stage).setInternal(internal));
+                if(output_interpreter){
+                    output_interpreter->execute();
+                }
+            }
 
             if (context->getCurrentTransaction() && !interpreter->supportsTransactions() &&
                 context->getSettingsRef().throw_on_unsupported_query_inside_transaction)
@@ -695,6 +718,7 @@ static std::tuple<ASTPtr, BlockIO> executeQueryImpl(
                 res = interpreter->execute();//实际上调用的是IInterpreter的子类（具体类）的方法，例如select语句 调用InterpreterSelectQuery/InterpreterSelectWithUnion的方法
 
             }
+
         }
 
         if (process_list_entry)

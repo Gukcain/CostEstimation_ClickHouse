@@ -408,9 +408,9 @@ BlockIO InterpreterSelectWithUnionQuery::execute()
     setQuota(res.pipeline);
 
     // 改 10-19
-    if(HasQuery::hasquery){
-        query_plan.outputPipeline();
-    }
+    // if(HasQuery::hasquery){
+    //     query_plan.outputPipeline();
+    // }
     return res;
 }
 
