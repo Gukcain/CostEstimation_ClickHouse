@@ -508,7 +508,7 @@ QueryPipeline InterpreterExplainQuery::executeImpl()
                 {
                     // 改 10-26
                     plan.outputPipeline();
-                    plan.explainPipeline(buf, settings.query_pipeline_options);
+                    // plan.explainPipeline(buf, settings.query_pipeline_options);
                 }
             }
             else if (dynamic_cast<const ASTInsertQuery *>(ast.getExplainedQuery().get()))
