@@ -1,3 +1,5 @@
+master为初始版本clickhouse数据库，OurCode分支为串行测量版本，OurCode_Parallel为并行测量版本。
+
 [![ClickHouse — open source distributed column-oriented DBMS](https://github.com/ClickHouse/clickhouse-presentations/raw/master/images/logo-400x240.png)](https://clickhouse.com)
 
 ClickHouse® is an open-source column-oriented database management system that allows generating analytical data reports in real-time.
