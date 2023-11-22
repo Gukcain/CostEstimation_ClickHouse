@@ -112,15 +112,17 @@ public:
         , shared_data(std::move(shared_data_))
         , arena(arena_)
         {
-            params = std::move(params_);
+            // params = std::move(params_);
         }
 
     std::vector<Param> getParaList() override{
         std::vector<Param> vec;
-        vec.push_back(Param("rows",std::to_string(params->getHeader().rows())));
-        vec.push_back(Param("colomns",std::to_string(params->getHeader().columns())));
-        vec.push_back(Param("enable_auto_progress",std::to_string(CATCSenable)));
+        // 改 2023-11-16
         if(params){
+            vec.push_back(Param("rows",std::to_string(params->getHeader().rows())));
+            vec.push_back(Param("colomns",std::to_string(params->getHeader().columns())));
+            vec.push_back(Param("enable_auto_progress",std::to_string(CATCSenable)));
+        
             String str;
             for(const auto & key : params.get()->params.keys){
                 str += key;
@@ -181,10 +183,11 @@ public:
 
     std::vector<Param> getParaList() override{
         std::vector<Param> vec;
-        vec.push_back(Param("rows",std::to_string(params->getHeader().rows())));
-        vec.push_back(Param("colomns",std::to_string(params->getHeader().columns())));
-        vec.push_back(Param("num_threads",std::to_string(num_threads)));
         if(params){
+            vec.push_back(Param("rows",std::to_string(params->getHeader().rows())));
+            vec.push_back(Param("colomns",std::to_string(params->getHeader().columns())));
+            vec.push_back(Param("num_threads",std::to_string(num_threads)));
+        
             String str;
             for(const auto & key : params.get()->params.keys){
                 str += key;

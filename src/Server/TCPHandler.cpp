@@ -97,6 +97,8 @@ namespace DB
 std::vector<std::vector<std::string>> ParaVector;
 DB::Processors processorList;
 String Query_String;
+int query_seq;
+
 namespace ErrorCodes
 {
     extern const int LOGICAL_ERROR;
@@ -149,6 +151,8 @@ TCPHandler::~TCPHandler()
 
 void TCPHandler::runImpl()
 {
+    // 改 11-12
+    query_seq = 0;
 
     setThreadName("TCPHandler");
     ThreadStatus thread_status;
@@ -401,6 +405,8 @@ void TCPHandler::runImpl()
                 ParaVector.clear();
                 ParaVector.shrink_to_fit();
                 starttime = chrono::steady_clock::now();
+                // 改 11-12
+                query_seq++;
                 // auto end = chrono::steady_clock::now();
                 // chrono::duration_cast<chrono::seconds>(end - start).count();
                 // auto end = std::chrono::system_clock::now();
@@ -634,6 +640,7 @@ void TCPHandler::runImpl()
             // chrono::duration_cast<chrono::seconds>(endtime - starttime).count();
             std::chrono::duration<double> elapsed_seconds = endtime-starttime;
             outputTotalTime(std::to_string(elapsed_seconds.count()));
+
         }
         
         if (network_error)
@@ -647,7 +654,7 @@ void TCPHandler::outputCost(){
     // os<<"yes1"<<endl;
     for(auto subvec: ParaVector){
         for(std::string param: subvec){
-            os<<param<<",";
+            os<<param<<"\t";
         }
         os<<std::endl;
     }

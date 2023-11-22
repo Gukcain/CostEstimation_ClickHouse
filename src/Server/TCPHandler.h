@@ -20,6 +20,7 @@
 #include <Formats/NativeWriter.h>
 
 #include "IServer.h"
+#include "Interpreters/InterpreterExplainQuery.h"
 #include "Processors/QueryPlan/IQueryPlanStep.h"
 #include "Server/TCPProtocolStackData.h"
 #include "Storages/MergeTree/RequestResponse.h"
@@ -41,6 +42,7 @@ namespace DB
 extern std::vector<std::vector<std::string>> ParaVector;
 extern Processors processorList;
 extern String Query_String;
+extern int query_seq;
 
 class Session;
 struct Settings;

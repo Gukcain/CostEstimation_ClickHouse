@@ -199,6 +199,48 @@ public:
     /// Optimization for prepare in case we know ports were updated.
     virtual Status prepare(const PortNumbers & /*updated_input_ports*/, const PortNumbers & /*updated_output_ports*/) { return prepare(); }
 
+    /** 改 11-14 为实际的prepare提供一个函数接口，在调用实际的prepare()前后做测量   弃用
+    */
+    // Status prepareInterface(const PortNumbers & updated_input_ports, const PortNumbers & updated_output_ports){   
+
+    //         bool has_data = HasQuery::hasquery;
+    //         Status res;
+
+    //         if(has_data){
+    //             // outputPara();
+    //             coster::QueryCoster a;
+    //             // outputPara();        //no
+    //             // std::vector<std::string> vector1;
+    //             size_t rows = 0,columns = 0;
+    //             // a.getTuple(chunk);
+    //             a.start(rows,columns);
+    //             res = prepare(updated_input_ports, updated_output_ports);
+    //             // outputPara();        //no
+    //             std::vector<std::string> vector = a.stop();
+    //             DB::ParaVector.push_back(insertIntoVec(vector));
+    //             // outputPara2();
+
+    //         }else{
+    //             // outputPara2();   //yes
+    //             res = prepare(updated_input_ports, updated_output_ports);
+    //             // outputPara3();   //yes
+    //         }
+
+    //         return res;
+            
+            
+
+    //         // if(has_data){
+                
+    //         //     // location_out.open("RandomTest.txt", std::ios::out | std::ios::app); 
+    //         //     // // auto& r = *join.get();
+    //         //     // // std::cout << typeid(r).name() << '\n';
+    //         //     // location_out << random_test <<" :执行" << getName() << "完毕,线程id为"<<std::this_thread::get_id()<<std::endl;
+    //         //     // location_out.close();
+    //         // }
+    //         // std::unique_lock<std::mutex> unlock(HasQuery::mutexofall);
+    // }
+
     /** You may call this method if 'prepare' returned Ready.
       * This method cannot access any ports. It should use only data that was prepared by 'prepare' method.
       *
@@ -273,6 +315,7 @@ public:
         }
     }
 
+    // 给json的processors构造parameters
     static std::vector<std::string> fillParamVec(std::vector<Param> paramlist){
         std::vector<std::string> res;
         int flag = 0;
@@ -291,10 +334,12 @@ public:
         return res;
     }
 
-    // 改 09-02
+    // 改 09-02 给csv构造特征列表
     std::vector<std::string> insertIntoVec(std::vector<std::string> vector1){
         std::vector<std::string> res;
         res.push_back(getName());
+        res.push_back(std::to_string(query_seq));     // 改 11-12 查询号
+        res.push_back("0x" + std::to_string(*(static_cast<unsigned long long*>(static_cast<void*>(this)))));       // 改 11-12 算子结点地址
         res.insert(res.end(),vector1.begin(),vector1.end());
         int flag = 0;
         for(const Param& param:getParaList()){
@@ -303,7 +348,7 @@ public:
         }
         if(flag<10)
         {
-            for(int i=flag;i<=10;i++)
+            for(int i=flag;i<10;i++)
             {
                 res.push_back("  ");
             }

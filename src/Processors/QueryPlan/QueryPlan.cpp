@@ -564,6 +564,8 @@ void QueryPlan::outputPipeline()
 
                     json a_processor;
                     a_processor["Name"] = prev->getName();
+                    // 改 11-12
+                    a_processor["Address"] = "0x" + std::to_string(*(static_cast<unsigned long long*>(static_cast<void*>(prev))));
                     a_processor["Parameters"] = s;
 
                     node_processors_list.push_back(a_processor);
@@ -585,6 +587,8 @@ void QueryPlan::outputPipeline()
 
                 json a_processor;
                 a_processor["Name"] = prev->getName();
+                // 改 11-12
+                a_processor["Address"] = "0x" + std::to_string(*(static_cast<unsigned long long*>(static_cast<void*>(prev))));
                 a_processor["Parameters"] = s;
 
                 node_processors_list.push_back(a_processor);
@@ -612,10 +616,17 @@ void QueryPlan::outputPipeline()
 
     result["Query"] = Query_String;
     result["Nodes"] = all_nodes;
+    // 改 11-12
+    result["QueryID"] = query_seq; 
     
     std::ofstream o;
     o.open("PipelineTree.json",std::ios::out|std::ios::app);
     o << std::setw(4) << result << std::endl;
+
+    // std::ofstream os;
+    // os.open("ForTest.txt",std::ios::out|std::ios::app);
+    // os<<5<<std::endl;
+    // os.close();
 
 }
 
