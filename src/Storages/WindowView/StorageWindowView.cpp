@@ -622,8 +622,9 @@ std::pair<BlocksPtr, Block> StorageWindowView::getNewBlocks(UInt32 watermark)
     auto pipeline = QueryPipelineBuilder::getPipeline(std::move(builder));
 
     // 改 05-07
-    // PullingAsyncPipelineExecutor executor(pipeline);
-    PullingPipelineExecutor executor(pipeline);
+    // 回 2023-11-14
+    PullingAsyncPipelineExecutor executor(pipeline);
+    // PullingPipelineExecutor executor(pipeline);
     Block block;
     BlocksPtr new_blocks = std::make_shared<Blocks>();
 

@@ -30,12 +30,13 @@ struct LocalQueryState
     /// Current stream to pull blocks from.
 
     // 改 2023-05-07
-    // std::unique_ptr<PullingAsyncPipelineExecutor> executor;
-    // std::unique_ptr<PushingPipelineExecutor> pushing_executor;
-    // std::unique_ptr<PushingAsyncPipelineExecutor> pushing_async_executor;
-    std::unique_ptr<PullingPipelineExecutor> executor;
+    // 回 2023-11-14
+    std::unique_ptr<PullingAsyncPipelineExecutor> executor;
     std::unique_ptr<PushingPipelineExecutor> pushing_executor;
-    std::unique_ptr<PushingPipelineExecutor> pushing_async_executor;
+    std::unique_ptr<PushingAsyncPipelineExecutor> pushing_async_executor;
+    // std::unique_ptr<PullingPipelineExecutor> executor;
+    // std::unique_ptr<PushingPipelineExecutor> pushing_executor;
+    // std::unique_ptr<PushingPipelineExecutor> pushing_async_executor;
     InternalProfileEventsQueuePtr profile_queue;
 
     std::unique_ptr<Exception> exception;

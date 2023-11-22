@@ -54,8 +54,8 @@ static constexpr UInt64 operator""_GiB(unsigned long long value)
     M(UInt64, max_joined_block_size_rows, DEFAULT_BLOCK_SIZE, "Maximum block size for JOIN result (if join algorithm supports it). 0 means unlimited.", 0) \
     M(UInt64, max_insert_threads,/* 改 08-07 0-1*/ /*改 09-01 1-0*/0, "The maximum number of threads to execute the INSERT SELECT query. Values 0 or 1 means that INSERT SELECT is not run in parallel. Higher values will lead to higher memory usage. Parallel INSERT SELECT has effect only if the SELECT part is run on parallel, see 'max_threads' setting.", 0) \
     M(UInt64, max_insert_delayed_streams_for_parallel_write, 0, "The maximum number of streams (columns) to delay final part flush. Default - auto (1000 in case of underlying storage supports parallel write, for example S3 and disabled otherwise)", 0) \
-    M(UInt64, max_final_threads, 1/**改16-1 2023-05-01 13:03 不一定需要改这里*/, "The maximum number of threads to read from table with FINAL.", 0) \
-    M(MaxThreads, max_threads, 1/**改0-1 2023-04-17 20：22*/, "The maximum number of threads to execute the request. By default, it is determined automatically.", 0) \
+    M(UInt64, max_final_threads, 16/**改16-1 2023-05-01 13:03 不一定需要改这里*/ /* 回 2023-11-14*/, "The maximum number of threads to read from table with FINAL.", 0) \
+    M(MaxThreads, max_threads, 0/**改0-1 2023-04-17 20：22*//* 回 2023-11-14*/, "The maximum number of threads to execute the request. By default, it is determined automatically.", 0) \
     M(MaxThreads, max_download_threads, /* 改 08-07 4-1*//*改 09-01 1-4*/4, "The maximum number of threads to download data (e.g. for URL engine).", 0) \
     M(UInt64, max_download_buffer_size, 10*1024*1024, "The maximal size of buffer for parallel downloading (e.g. for URL engine) per each thread.", 0) \
     M(UInt64, max_read_buffer_size, DBMS_DEFAULT_BUFFER_SIZE, "The maximum size of the buffer to read from the filesystem.", 0) \
@@ -142,7 +142,7 @@ static constexpr UInt64 operator""_GiB(unsigned long long value)
     M(UInt64, group_by_two_level_threshold, 100000, "From what number of keys, a two-level aggregation starts. 0 - the threshold is not set.", 0) \
     M(UInt64, group_by_two_level_threshold_bytes, 50000000, "From what size of the aggregation state in bytes, a two-level aggregation begins to be used. 0 - the threshold is not set. Two-level aggregation is used when at least one of the thresholds is triggered.", 0) \
     M(Bool, distributed_aggregation_memory_efficient, true, "Is the memory-saving mode of distributed aggregation enabled.", 0) \
-    M(UInt64, aggregation_memory_efficient_merge_threads, 1/**改 0-1 2023-04-17 20：27*/, "Number of threads to use for merge intermediate aggregation results in memory efficient mode. When bigger, then more memory is consumed. 0 means - same as 'max_threads'.", 0) \
+    M(UInt64, aggregation_memory_efficient_merge_threads, 0/**改 0-1 2023-04-17 20：27*//* 回 2023-11-14*/, "Number of threads to use for merge intermediate aggregation results in memory efficient mode. When bigger, then more memory is consumed. 0 means - same as 'max_threads'.", 0) \
     M(Bool, enable_memory_bound_merging_of_aggregation_results, false, "Enable memory bound merging strategy for aggregation. Set it to true only if all nodes of your clusters have versions >= 22.12.", 0) \
     M(Bool, enable_positional_arguments, true, "Enable positional arguments in ORDER BY, GROUP BY and LIMIT BY", 0) \
     M(Bool, enable_extended_results_for_datetime_functions, false, "Enable date functions like toLastDayOfMonth return Date32 results (instead of Date results) for Date32/DateTime64 arguments.", 0) \
@@ -169,9 +169,9 @@ static constexpr UInt64 operator""_GiB(unsigned long long value)
     M(UInt64, optimize_skip_unused_shards_nesting, 0, "Same as optimize_skip_unused_shards, but accept nesting level until which it will work.", 0) \
     M(UInt64, force_optimize_skip_unused_shards_nesting, 0, "Same as force_optimize_skip_unused_shards, but accept nesting level until which it will work.", 0) \
     \
-    M(Bool, input_format_parallel_parsing, /*改 06-07*/false, "Enable parallel parsing for some data formats.", 0) \
+    M(Bool, input_format_parallel_parsing, /*改 06-07*//* 回 2023-11-14*/true, "Enable parallel parsing for some data formats.", 0) \
     M(UInt64, min_chunk_bytes_for_parallel_parsing, (10 * 1024 * 1024), "The minimum chunk size in bytes, which each thread will parse in parallel.", 0) \
-    M(Bool, output_format_parallel_formatting, /*改 06-07*/false, "Enable parallel formatting for some data formats.", 0) \
+    M(Bool, output_format_parallel_formatting, /*改 06-07*//* 回 2023-11-14*/true, "Enable parallel formatting for some data formats.", 0) \
     \
     M(UInt64, merge_tree_min_rows_for_concurrent_read, (20 * 8192), "If at least as many lines are read from one file, the reading can be parallelized.", 0) \
     M(UInt64, merge_tree_min_bytes_for_concurrent_read, (24 * 10 * 1024 * 1024), "If at least as many bytes are read from one file, the reading can be parallelized.", 0) \
@@ -197,7 +197,7 @@ static constexpr UInt64 operator""_GiB(unsigned long long value)
     M(String, force_data_skipping_indices, "", "Comma separated list of strings or literals with the name of the data skipping indices that should be used during query execution, otherwise an exception will be thrown.", 0) \
     \
     M(Float, max_streams_to_max_threads_ratio, 1, "Allows you to use more sources than the number of threads - to more evenly distribute work across threads. It is assumed that this is a temporary solution, since it will be possible in the future to make the number of sources equal to the number of threads, but for each source to dynamically select available work for itself.", 0) \
-    M(Float, max_streams_multiplier_for_merge_tables, /*改 06-07 5->1*/1, "Ask more streams when reading from Merge table. Streams will be spread across tables that Merge table will use. This allows more even distribution of work across threads and especially helpful when merged tables differ in size.", 0) \
+    M(Float, max_streams_multiplier_for_merge_tables, /*改 06-07 5->1*//* 回 2023-11-14*/5, "Ask more streams when reading from Merge table. Streams will be spread across tables that Merge table will use. This allows more even distribution of work across threads and especially helpful when merged tables differ in size.", 0) \
     \
     M(String, network_compression_method, "LZ4", "Allows you to select the method of data compression when writing.", 0) \
     \
@@ -218,15 +218,15 @@ static constexpr UInt64 operator""_GiB(unsigned long long value)
     M(Bool, log_processors_profiles, false, "Log Processors profile events.", 0) \
     M(DistributedProductMode, distributed_product_mode, DistributedProductMode::DENY, "How are distributed subqueries performed inside IN or JOIN sections?", IMPORTANT) \
     \
-    M(UInt64, max_concurrent_queries_for_all_users, /*改 06-07 0->1*/0, "The maximum number of concurrent requests for all users.", 0) \
-    M(UInt64, max_concurrent_queries_for_user, /*改 06-07 0->1*/0, "The maximum number of concurrent requests per user.", 0) \
+    M(UInt64, max_concurrent_queries_for_all_users, 0, "The maximum number of concurrent requests for all users.", 0) \
+    M(UInt64, max_concurrent_queries_for_user, 0, "The maximum number of concurrent requests per user.", 0) \
     \
     M(Bool, insert_deduplicate, true, "For INSERT queries in the replicated table, specifies that deduplication of insertings blocks should be performed", 0) \
     M(Bool, async_insert_deduplicate, false, "For async INSERT queries in the replicated table, specifies that deduplication of insertings blocks should be performed", 0) \
     \
     M(UInt64Auto, insert_quorum, 0, "For INSERT queries in the replicated table, wait writing for the specified number of replicas and linearize the addition of the data. 0 - disabled, 'auto' - use majority", 0) \
     M(Milliseconds, insert_quorum_timeout, 600000, "If the quorum of replicas did not meet in specified time (in milliseconds), exception will be thrown and insertion is aborted.", 0) \
-    M(Bool, insert_quorum_parallel, false/**改true-false 2023-04-17 20：25*/, "For quorum INSERT queries - enable to make parallel inserts without linearizability", 0) \
+    M(Bool, insert_quorum_parallel, true/**改true-false 2023-04-17 20：25*//* 回 2023-11-14*/, "For quorum INSERT queries - enable to make parallel inserts without linearizability", 0) \
     M(UInt64, select_sequential_consistency, 0, "For SELECT queries from the replicated table, throw an exception if the replica does not have a chunk written with the quorum; do not read the parts that have not yet been written with the quorum.", 0) \
     M(UInt64, table_function_remote_max_addresses, 1000, "The maximum number of different shards and the maximum number of replicas of one shard in the `remote` function.", 0) \
     M(Milliseconds, read_backoff_min_latency_ms, 1000, "Setting to reduce the number of threads in case of slow reads. Pay attention only to reads that took at least that much time.", 0) \
@@ -411,8 +411,8 @@ static constexpr UInt64 operator""_GiB(unsigned long long value)
     M(UInt64, max_temporary_data_on_disk_size_for_user, 0, "The maximum amount of data consumed by temporary files on disk in bytes for all concurrently running user queries. Zero means unlimited.", 0)\
     M(UInt64, max_temporary_data_on_disk_size_for_query, 0, "The maximum amount of data consumed by temporary files on disk in bytes for all concurrently running queries. Zero means unlimited.", 0)\
     \
-    M(UInt64, backup_threads, /*改 06-07 16->1*/1, "The maximum number of threads to execute BACKUP requests.", 0) \
-    M(UInt64, restore_threads, /*改 06-07 16->1*/1, "The maximum number of threads to execute RESTORE requests.", 0) \
+    M(UInt64, backup_threads, /*改 06-07 16->1*//* 回 2023-11-14*/16, "The maximum number of threads to execute BACKUP requests.", 0) \
+    M(UInt64, restore_threads, /*改 06-07 16->1*//* 回 2023-11-14*/16, "The maximum number of threads to execute RESTORE requests.", 0) \
     \
     M(Bool, log_profile_events, true, "Log query performance statistics into the query_log, query_thread_log and query_views_log.", 0) \
     M(Bool, log_query_settings, true, "Log query settings into the query_log.", 0) \
@@ -484,7 +484,7 @@ static constexpr UInt64 operator""_GiB(unsigned long long value)
     M(Bool, enable_scalar_subquery_optimization, true, "If it is set to true, prevent scalar subqueries from (de)serializing large scalar values and possibly avoid running the same subquery more than once.", 0) \
     M(Bool, optimize_trivial_count_query, true, "Process trivial 'SELECT count() FROM table' query from metadata.", 0) \
     M(Bool, optimize_respect_aliases, true, "If it is set to true, it will respect aliases in WHERE/GROUP BY/ORDER BY, that will help with partition pruning/secondary indexes/optimize_aggregation_in_order/optimize_read_in_order/optimize_trivial_count", 0) \
-    M(UInt64, mutations_sync, /*改 08-07 0->1*/1, "Wait for synchronous execution of ALTER TABLE UPDATE/DELETE queries (mutations). 0 - execute asynchronously. 1 - wait current server. 2 - wait all replicas if they exist.", 0) \
+    M(UInt64, mutations_sync, /*改 08-07 0->1*//* 回 2023-11-14*/0, "Wait for synchronous execution of ALTER TABLE UPDATE/DELETE queries (mutations). 0 - execute asynchronously. 1 - wait current server. 2 - wait all replicas if they exist.", 0) \
     M(Bool, allow_experimental_lightweight_delete, false, "Enable lightweight DELETE mutations for mergetree tables. Work in progress", 0) \
     M(Bool, optimize_move_functions_out_of_any, false, "Move functions out of aggregate functions 'any', 'anyLast'.", 0) \
     M(Bool, optimize_normalize_count_variants, true, "Rewrite aggregate functions that semantically equals to count() as count().", 0) \
@@ -602,7 +602,7 @@ static constexpr UInt64 operator""_GiB(unsigned long long value)
     M(UInt64, merge_tree_min_bytes_for_concurrent_read_for_remote_filesystem, (24 * 10 * 1024 * 1024), "If at least as many bytes are read from one file, the reading can be parallelized, when reading from remote filesystem.", 0) \
     M(UInt64, remote_read_min_bytes_for_seek, 4 * DBMS_DEFAULT_BUFFER_SIZE, "Min bytes required for remote read (url, s3) to do seek, instead for read with ignore.", 0) \
     \
-    M(UInt64, async_insert_threads, /*改 06-07 16->0*/0, "Maximum number of threads to actually parse and insert data in background. Zero means asynchronous mode is disabled", 0) \
+    M(UInt64, async_insert_threads, /*改 06-07 16->0*//* 回 2023-11-14*/16, "Maximum number of threads to actually parse and insert data in background. Zero means asynchronous mode is disabled", 0) \
     M(Bool, async_insert, false, "If true, data from INSERT query is stored in queue and later flushed to table in background. Makes sense only for inserts via HTTP protocol. If wait_for_async_insert is false, INSERT query is processed almost instantly, otherwise client will wait until data will be flushed to table", 0) \
     M(Bool, wait_for_async_insert, true, "If true wait for processing of asynchronous insertion", 0) \
     M(Seconds, wait_for_async_insert_timeout, DBMS_DEFAULT_LOCK_ACQUIRE_TIMEOUT_SEC, "Timeout for waiting for processing asynchronous insertion", 0) \

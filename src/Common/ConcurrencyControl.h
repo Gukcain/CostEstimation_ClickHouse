@@ -177,7 +177,8 @@ public:
     [[nodiscard]] AllocationPtr allocate(SlotCount min, SlotCount max)
     {
         // 改 2023-05-01 22：52 加一行
-        max = min = 1; 
+        // 回 2023-11-14
+        // max = min = 1; 
 
         if (min > max)
             throw DB::Exception("ConcurrencyControl: invalid allocation requirements", DB::ErrorCodes::LOGICAL_ERROR);
@@ -200,7 +201,8 @@ public:
     {
         std::unique_lock lock{mutex};
         // 改 2023-05-01 22：54 加一行
-        value = 1;
+        // 回 2023-11-14
+        // value = 1;
         max_concurrency = std::max<SlotCount>(1, value); // never allow max_concurrency to be zero
         schedule(lock);
     }

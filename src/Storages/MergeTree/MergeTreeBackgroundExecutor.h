@@ -178,7 +178,8 @@ public:
         active.set_capacity(max_tasks_count);
 
         // 改 05-18
-        threads_count = 1;
+        // 回 2023-11-14
+        // threads_count = 1;
         pool.setMaxThreads(std::max(1UL, threads_count));
         pool.setMaxFreeThreads(std::max(1UL, threads_count));
         pool.setQueueSize(std::max(1UL, threads_count));

@@ -119,8 +119,9 @@ MergeableBlocksPtr StorageLiveView::collectMergeableBlocks(ContextPtr local_cont
 
     auto pipeline = QueryPipelineBuilder::getPipeline(std::move(builder));
     // 改 2023-05-07
-    // PullingAsyncPipelineExecutor executor(pipeline);
-    PullingPipelineExecutor executor(pipeline);
+    // 回 2023-11-14
+    PullingAsyncPipelineExecutor executor(pipeline);
+    // PullingPipelineExecutor executor(pipeline);
     Block this_block;
 
     while (executor.pull(this_block))
@@ -245,8 +246,9 @@ void StorageLiveView::writeIntoLiveView(
 
         auto pipeline = QueryPipelineBuilder::getPipeline(std::move(builder));
         // 改 05-07
-        // PullingAsyncPipelineExecutor executor(pipeline);
-        PullingPipelineExecutor executor(pipeline);
+        // 回 2023-11-14
+        PullingAsyncPipelineExecutor executor(pipeline);
+        // PullingPipelineExecutor executor(pipeline);
         Block this_block;
 
         while (executor.pull(this_block))
@@ -386,8 +388,9 @@ bool StorageLiveView::getNewBlocks()
     auto pipeline = QueryPipelineBuilder::getPipeline(std::move(builder));
 
     // 改 05-07
-    // PullingAsyncPipelineExecutor executor(pipeline);
-    PullingPipelineExecutor executor(pipeline);
+    // 回 2023-11-14
+    PullingAsyncPipelineExecutor executor(pipeline);
+    // PullingPipelineExecutor executor(pipeline);
     Block block;
     while (executor.pull(block))
     {

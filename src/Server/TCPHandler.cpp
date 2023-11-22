@@ -97,6 +97,8 @@ namespace DB
 std::vector<std::vector<std::string>> ParaVector;
 DB::Processors processorList;
 String Query_String;
+int query_seq;
+
 namespace ErrorCodes
 {
     extern const int LOGICAL_ERROR;
@@ -149,6 +151,8 @@ TCPHandler::~TCPHandler()
 
 void TCPHandler::runImpl()
 {
+    // 改 11-12
+    query_seq = 0;
 
     setThreadName("TCPHandler");
     ThreadStatus thread_status;
@@ -401,6 +405,8 @@ void TCPHandler::runImpl()
                 ParaVector.clear();
                 ParaVector.shrink_to_fit();
                 starttime = chrono::steady_clock::now();
+                // 改 11-12
+                query_seq++;
                 // auto end = chrono::steady_clock::now();
                 // chrono::duration_cast<chrono::seconds>(end - start).count();
                 // auto end = std::chrono::system_clock::now();
@@ -634,6 +640,7 @@ void TCPHandler::runImpl()
             // chrono::duration_cast<chrono::seconds>(endtime - starttime).count();
             std::chrono::duration<double> elapsed_seconds = endtime-starttime;
             outputTotalTime(std::to_string(elapsed_seconds.count()));
+
         }
         
         if (network_error)
@@ -647,7 +654,7 @@ void TCPHandler::outputCost(){
     // os<<"yes1"<<endl;
     for(auto subvec: ParaVector){
         for(std::string param: subvec){
-            os<<param<<",";
+            os<<param<<"\t";
         }
         os<<std::endl;
     }
@@ -773,7 +780,8 @@ void TCPHandler::skipData()
 void TCPHandler::processInsertQuery()
 {
     // 改 2023-04-17 17：55 
-    // size_t num_threads = state.io.pipeline.getNumThreads();
+    // 回 2023-11-14
+    size_t num_threads = state.io.pipeline.getNumThreads();
 
     auto run_executor = [&](auto & executor)
     {
@@ -808,16 +816,17 @@ void TCPHandler::processInsertQuery()
     };
 
     // 改 2023-04-17 17：54 不判断num_threads 任何情况都采用PushingPipelineExecutor
-    // if (num_threads > 1)
-    // {
-    //     PushingAsyncPipelineExecutor executor(state.io.pipeline);
-    //     run_executor(executor);
-    // }
-    // else
-    // {
+    // 回 2023-11-14
+    if (num_threads > 1)
+    {
+        PushingAsyncPipelineExecutor executor(state.io.pipeline);
+        run_executor(executor);
+    }
+    else
+    {
         PushingPipelineExecutor executor(state.io.pipeline);
         run_executor(executor);
-    // }
+    }
 
     sendInsertProfileEvents();
 }
@@ -846,8 +855,9 @@ void TCPHandler::processOrdinaryQueryWithProcessors()
 
     {
         // 修改 2023-04-16 18：42
-        // PullingAsyncPipelineExecutor executor(pipeline);
-        PullingPipelineExecutor executor(pipeline);
+        // 回 2023-11-14
+        PullingAsyncPipelineExecutor executor(pipeline);
+        // PullingPipelineExecutor executor(pipeline);
         CurrentMetrics::Increment query_thread_metric_increment{CurrentMetrics::QueryThread};
 
         Block block;

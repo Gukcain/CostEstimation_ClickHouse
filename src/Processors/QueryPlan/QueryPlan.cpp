@@ -235,7 +235,8 @@ QueryPipelineBuilderPtr QueryPlan::buildQueryPipeline(
         {
             bool limit_max_threads = frame.pipelines.empty();
             // 改 05-07
-            limit_max_threads = true;
+            // 回 2023-11-14
+            // limit_max_threads = true;
             last_pipeline = frame.node->step->updatePipeline(std::move(frame.pipelines), build_pipeline_settings);
 
             if (limit_max_threads && max_threads)
@@ -564,6 +565,8 @@ void QueryPlan::outputPipeline()
 
                     json a_processor;
                     a_processor["Name"] = prev->getName();
+                    // 改 11-12
+                    a_processor["Address"] = "0x" + std::to_string(*(static_cast<unsigned long long*>(static_cast<void*>(prev))));
                     a_processor["Parameters"] = s;
 
                     node_processors_list.push_back(a_processor);
@@ -585,6 +588,8 @@ void QueryPlan::outputPipeline()
 
                 json a_processor;
                 a_processor["Name"] = prev->getName();
+                // 改 11-12
+                a_processor["Address"] = "0x" + std::to_string(*(static_cast<unsigned long long*>(static_cast<void*>(prev))));
                 a_processor["Parameters"] = s;
 
                 node_processors_list.push_back(a_processor);
@@ -612,10 +617,17 @@ void QueryPlan::outputPipeline()
 
     result["Query"] = Query_String;
     result["Nodes"] = all_nodes;
+    // 改 11-12
+    result["QueryID"] = query_seq; 
     
     std::ofstream o;
     o.open("PipelineTree.json",std::ios::out|std::ios::app);
     o << std::setw(4) << result << std::endl;
+
+    // std::ofstream os;
+    // os.open("ForTest.txt",std::ios::out|std::ios::app);
+    // os<<5<<std::endl;
+    // os.close();
 
 }
 

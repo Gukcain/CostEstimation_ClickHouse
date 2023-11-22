@@ -32,8 +32,9 @@ namespace CurrentMetrics
 template <typename Thread>
 ThreadPoolImpl<Thread>::ThreadPoolImpl()
     // 改 05-01
-    // : ThreadPoolImpl(getNumberOfPhysicalCPUCores())
-        : ThreadPoolImpl(1)
+    // 回 2023-11-14
+    : ThreadPoolImpl(getNumberOfPhysicalCPUCores())
+        // : ThreadPoolImpl(1)
 {
 }
 
@@ -129,8 +130,6 @@ ReturnType ThreadPoolImpl<Thread>::scheduleImpl(Job job, ssize_t priority, std::
         /// Because if an exception would be thrown, we won't notify a thread about job occurrence.
 
         /// Check if there are enough threads to process job.
-        // 改 2023-05-02
-        // if (threads.size() < 1)
         // 首先判断线程队列中已有的线程数量是否超过线程池设置的参数最大线程数量
         if (threads.size() < std::min(max_threads, scheduled_jobs + 1))
         {

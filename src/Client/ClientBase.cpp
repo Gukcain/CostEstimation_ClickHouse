@@ -1403,8 +1403,9 @@ try
 {
     QueryPipeline pipeline(std::move(pipe));
     // 改 2023-05-07
-    // PullingAsyncPipelineExecutor executor(pipeline);
-    PullingPipelineExecutor executor(pipeline);
+    // 回 2023-11-14
+    PullingAsyncPipelineExecutor executor(pipeline);
+    // PullingPipelineExecutor executor(pipeline);
 
     if (need_render_progress)
     {

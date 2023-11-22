@@ -160,7 +160,8 @@ public:
             num_threads = std::min(num_threads, max_threads);
 
         // 改 05-18 
-        num_threads = 1;
+        // 回 2023-11-14
+        // num_threads = 1;
         return std::max<size_t>(1, num_threads);
     }
 
@@ -171,7 +172,8 @@ public:
     void limitMaxThreads(size_t max_threads_)
     {
         // 改 05-14
-        max_threads_ = 1;
+        // 回 2023-11-14
+        // max_threads_ = 1;
 
         if (max_threads == 0 || max_threads_ < max_threads)
             max_threads = max_threads_;

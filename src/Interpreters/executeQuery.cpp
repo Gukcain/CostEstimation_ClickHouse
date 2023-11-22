@@ -388,12 +388,15 @@ static std::tuple<ASTPtr, BlockIO> executeQueryImpl(
             /// TODO: parser should fail early when max_query_size limit is reached.
             ast = parseQuery(parser, begin, end, "", max_query_size, settings.max_parser_depth);
             
-            // 改 10-26
-            if(HasQuery::hasquery){
-                const String & query_addexplain = "explain pipeline "+std::string(begin);
-                ParserQuery parser2(query_addexplain.data()+query_addexplain.size(), settings.allow_settings_after_format_in_insert);
-                forpipeline = parseQuery(parser2, query_addexplain.data(), query_addexplain.data()+query_addexplain.size(), "", max_query_size, settings.max_parser_depth);
+            // 改 11-13 改 10-26 
+            if(begin[0]!='e'&&begin[1]!='x'){
+                if(HasQuery::hasquery){
+                    const String & query_addexplain = "explain pipeline "+std::string(begin);
+                    ParserQuery parser2(query_addexplain.data()+query_addexplain.size(), settings.allow_settings_after_format_in_insert);
+                    forpipeline = parseQuery(parser2, query_addexplain.data(), query_addexplain.data()+query_addexplain.size(), "", max_query_size, settings.max_parser_depth);
+                }   
             }
+            
             
         }
 
@@ -664,10 +667,13 @@ static std::tuple<ASTPtr, BlockIO> executeQueryImpl(
 
             interpreter = InterpreterFactory::get(ast, context, SelectQueryOptions(stage).setInternal(internal));
             // 改 10-26 加一个InterpreterExplainQuery用来获取pipelinetree
-            if(DB::HasQuery::hasquery){
-                output_interpreter = InterpreterFactory::get(forpipeline, context, SelectQueryOptions(stage).setInternal(internal));
-                if(output_interpreter){
-                    output_interpreter->execute();
+            // 改 11-13 
+            if(begin[0]!='e'&&begin[1]!='x'){
+                if(DB::HasQuery::hasquery){
+                    output_interpreter = InterpreterFactory::get(forpipeline, context, SelectQueryOptions(stage).setInternal(internal));
+                    if(output_interpreter){
+                        output_interpreter->execute();
+                    }
                 }
             }
 

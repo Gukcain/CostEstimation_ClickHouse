@@ -150,8 +150,9 @@ class GlobalThreadPool : public FreeThreadPool, private boost::noncopyable
 
 public:
     // 改 2023-05-01
-    static void initialize(size_t max_threads = 1, size_t max_free_threads = 1, size_t queue_size = 10000);
-    // static void initialize(size_t max_threads = 10000, size_t max_free_threads = 1000, size_t queue_size = 10000);
+    // 回 2023-11-14
+    // static void initialize(size_t max_threads = 1, size_t max_free_threads = 1, size_t queue_size = 10000);
+    static void initialize(size_t max_threads = 10000, size_t max_free_threads = 1000, size_t queue_size = 10000);
     static GlobalThreadPool & instance();
 };
 

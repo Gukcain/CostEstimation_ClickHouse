@@ -459,8 +459,9 @@ void ExpressionAnalyzer::tryMakeSetForIndexFromSubquery(const ASTPtr & subquery_
     auto io = interpreter_subquery->execute();
 
     // 改 2023-05-07
-    // PullingAsyncPipelineExecutor executor(io.pipeline);
-    PullingPipelineExecutor executor(io.pipeline);
+    // 回 2023-11-14
+    PullingAsyncPipelineExecutor executor(io.pipeline);
+    // PullingPipelineExecutor executor(io.pipeline);
 
     SetPtr set = std::make_shared<Set>(settings.size_limits_for_set, true, getContext()->getSettingsRef().transform_null_in);
     set->setHeader(executor.getHeader().getColumnsWithTypeAndName());

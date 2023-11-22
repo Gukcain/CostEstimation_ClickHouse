@@ -229,8 +229,9 @@ Pipe::Pipe(std::shared_ptr<Processors> processors_) : processors(std::move(proce
         assertBlocksHaveEqualStructure(header, output_ports[i]->getHeader(), "Pipe");
 
     // 改 05-14
-    // max_parallel_streams = output_ports.size();
-    max_parallel_streams = 1;
+    // 回 2023-11-14
+    max_parallel_streams = output_ports.size();
+    // max_parallel_streams = 1;
 
     if (collected_processors)
         for (const auto & processor : *processors)
@@ -323,8 +324,9 @@ Pipe Pipe::unitePipes(Pipes pipes, Processors * collected_processors, bool allow
         res.output_ports.insert(res.output_ports.end(), pipe.output_ports.begin(), pipe.output_ports.end());
 
         // 改 05-14
-        // res.max_parallel_streams += pipe.max_parallel_streams;
-        res.max_parallel_streams = 1;
+        // 回 2023-11-14
+        res.max_parallel_streams += pipe.max_parallel_streams;
+        // res.max_parallel_streams = 1;
 
         if (pipe.totals_port)
             totals.emplace_back(pipe.totals_port);
@@ -364,8 +366,9 @@ void Pipe::addSource(ProcessorPtr source)
     processors->emplace_back(std::move(source));
 
     // 改 05-14
-    // max_parallel_streams = std::max<size_t>(max_parallel_streams, output_ports.size());
-    max_parallel_streams = 1;
+    // 回 2023-11-14
+    max_parallel_streams = std::max<size_t>(max_parallel_streams, output_ports.size());
+    // max_parallel_streams = 1;
 }
 
 void Pipe::addTotalsSource(ProcessorPtr source)
@@ -519,8 +522,9 @@ void Pipe::addTransform(ProcessorPtr transform, OutputPort * totals, OutputPort 
     processors->emplace_back(std::move(transform));
 
     // 改 05-14
-    // max_parallel_streams = std::max<size_t>(max_parallel_streams, output_ports.size());
-    max_parallel_streams = 1;
+    // 回 2023-11-14
+    max_parallel_streams = std::max<size_t>(max_parallel_streams, output_ports.size());
+    // max_parallel_streams = 1;
 }
 
 void Pipe::addTransform(ProcessorPtr transform, InputPort * totals, InputPort * extremes)
@@ -612,8 +616,9 @@ void Pipe::addTransform(ProcessorPtr transform, InputPort * totals, InputPort * 
     processors->emplace_back(std::move(transform));
 
     // 改 05-14
-    // max_parallel_streams = std::max<size_t>(max_parallel_streams, output_ports.size());
-    max_parallel_streams = 1;
+    // 回 2023-11-14
+    max_parallel_streams = std::max<size_t>(max_parallel_streams, output_ports.size());
+    // max_parallel_streams = 1;
 }
 
 void Pipe::addSimpleTransform(const ProcessorGetterWithStreamKind & getter)
@@ -877,8 +882,9 @@ void Pipe::transform(const Transformer & transformer, bool check_ports)
     processors->insert(processors->end(), new_processors.begin(), new_processors.end());
 
     // 改 05-14
-    // max_parallel_streams = std::max<size_t>(max_parallel_streams, output_ports.size());
-    max_parallel_streams = 1;
+    // 回 2023-11-14
+    max_parallel_streams = std::max<size_t>(max_parallel_streams, output_ports.size());
+    // max_parallel_streams = 1;
 }
 
 }

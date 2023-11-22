@@ -98,10 +98,13 @@ public:
     Block getHeader() const;
 
     // 改 2023-05-01
-    static size_t getNumThreads()  { return 1; }
-    // size_t getNumThreads() const { return num_threads; }
+    // 回 2023-11-14
+    // static size_t getNumThreads()  { return 1; }
+    size_t getNumThreads() const { return num_threads; }
     // 改 2023-05-01
-    void setNumThreads(size_t num_threads_) { num_threads_ = 1;num_threads = num_threads_; }
+    // 回 2023-11-14
+    // void setNumThreads(size_t num_threads_) { num_threads_ = 1;num_threads = num_threads_; }
+    void setNumThreads(size_t num_threads_) { num_threads = num_threads_; }
 
     void setProcessListElement(QueryStatusPtr elem);
     void setProgressCallback(const ProgressCallback & callback);
@@ -153,8 +156,9 @@ private:
     IOutputFormat * output_format = nullptr;
 
     // 改 05-01
-    // size_t num_threads = 0;
-    size_t num_threads = 1;
+    // 回 2023-11-14
+    size_t num_threads = 0;
+    // size_t num_threads = 1;
 
     friend class PushingPipelineExecutor;
     friend class PullingPipelineExecutor;

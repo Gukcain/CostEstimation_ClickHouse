@@ -11,6 +11,7 @@ namespace DB
 class InterpreterExplainQuery : public IInterpreter, WithContext
 {
 public:
+
     InterpreterExplainQuery(const ASTPtr & query_, ContextPtr context_) : WithContext(context_), query(query_) { }
 
     BlockIO execute() override;

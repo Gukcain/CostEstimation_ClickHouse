@@ -82,7 +82,9 @@ void PipelineExecutor::finish()
 void PipelineExecutor::execute(size_t num_threads)
 {
     checkTimeLimit();
-    // if (num_threads < 1)
+    // 改 05
+    // 回 2023-11-14
+    if (num_threads < 1)
         num_threads = 1;
 
     try
@@ -257,7 +259,8 @@ void PipelineExecutor::executeStepImpl(size_t thread_num, std::atomic_bool * yie
 
             /// Upscale if possible.
             // 改 05-20 注释掉
-            // spawnThreads();
+            // 回 2023-11-14
+            spawnThreads();
 
             /// We have executed single processor. Check if we need to yield execution.
             if (yield_flag && *yield_flag)
@@ -278,7 +281,8 @@ void PipelineExecutor::initializeExecution(size_t num_threads)
     /// Allocate CPU slots from concurrency control
     constexpr size_t min_threads = 1;
     // 改 2023-05-01 21：24
-    num_threads = 1;
+    // 回 2023-11-14
+    // num_threads = 1;
     slots = ConcurrencyControl::instance().allocate(min_threads, num_threads);
     size_t use_threads = slots->grantedCount();
 
@@ -351,7 +355,8 @@ void PipelineExecutor::joinThreads()
 void PipelineExecutor::executeImpl(size_t num_threads)
 {
     // 改 2023-05-02
-    num_threads = 1;
+    // 回 2023-11-14
+    // num_threads = 1;
 
     initializeExecution(num_threads);
 
@@ -366,7 +371,8 @@ void PipelineExecutor::executeImpl(size_t num_threads)
     );
 
     // 改 05-20
-    num_threads = 1;
+    // 回 2023-11-14
+    // num_threads = 1;
     if (num_threads > 1)
     {
         spawnThreads(); // start at least one thread

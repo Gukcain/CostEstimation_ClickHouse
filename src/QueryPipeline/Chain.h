@@ -24,8 +24,9 @@ public:
 
     size_t getNumThreads() const { return num_threads; }
     // 改 05-01
-    // void setNumThreads(size_t num_threads_) { num_threads = num_threads_; }
-    void setNumThreads(size_t num_threads_) { num_threads_ = 1;num_threads = num_threads_; }
+    // 回 2023-11-14
+    void setNumThreads(size_t num_threads_) { num_threads = num_threads_; }
+    // void setNumThreads(size_t num_threads_) { num_threads_ = 1;num_threads = num_threads_; }
 
     void addSource(ProcessorPtr processor);
     void addSink(ProcessorPtr processor);
@@ -59,8 +60,9 @@ private:
     ///  input port                               output port
     std::list<ProcessorPtr> processors;
     // 改 05-01
-    // size_t num_threads = 0;
-    size_t num_threads = 1;
+    // 回 2023-11-14
+    size_t num_threads = 0;
+    // size_t num_threads = 1;
 };
 
 }

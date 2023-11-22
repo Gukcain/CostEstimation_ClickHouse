@@ -188,8 +188,9 @@ void ExecuteScalarSubqueriesMatcher::visit(const ASTSubquery & subquery, ASTPtr 
             auto io = interpreter->execute();
 
             // 改 2023-05-07
-            // PullingAsyncPipelineExecutor executor(io.pipeline);
-            PullingPipelineExecutor executor(io.pipeline);
+            // 回 2023-11-14
+            PullingAsyncPipelineExecutor executor(io.pipeline);
+            // PullingPipelineExecutor executor(io.pipeline);
             io.pipeline.setProgressCallback(data.getContext()->getProgressCallback());
             while (block.rows() == 0 && executor.pull(block));
 

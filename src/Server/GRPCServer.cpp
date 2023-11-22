@@ -1200,8 +1200,9 @@ namespace
         if (io.pipeline.pulling())
         {
             // 改 2023-05-01
-            // auto executor = std::make_shared<PullingAsyncPipelineExecutor>(io.pipeline);
-            auto executor = std::make_shared<PullingPipelineExecutor>(io.pipeline);
+            // 回 2023-11-14
+            auto executor = std::make_shared<PullingAsyncPipelineExecutor>(io.pipeline);
+            // auto executor = std::make_shared<PullingPipelineExecutor>(io.pipeline);
             auto check_for_cancel = [&]
             {
                 if (isQueryCancelled())

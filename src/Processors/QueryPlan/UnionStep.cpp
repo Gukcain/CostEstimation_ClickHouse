@@ -38,7 +38,8 @@ UnionStep::UnionStep(DataStreams input_streams_, size_t max_threads_)
         output_stream = DataStream{.header = header};
 
     // 改 05-01
-    max_threads = 1;
+    // 回 2023-11-14
+    // max_threads = 1;
 
     updateOutputSortDescription();
 }
@@ -97,8 +98,9 @@ QueryPipelineBuilderPtr UnionStep::updatePipeline(QueryPipelineBuilders pipeline
     }
 
     // 改 05-01
-    // *pipeline = QueryPipelineBuilder::unitePipelines(std::move(pipelines), max_threads);
-    *pipeline = QueryPipelineBuilder::unitePipelines(std::move(pipelines), 1);
+    // 回 2023-11-14
+    *pipeline = QueryPipelineBuilder::unitePipelines(std::move(pipelines), max_threads);
+    // *pipeline = QueryPipelineBuilder::unitePipelines(std::move(pipelines), 1);
 
     processors = collector.detachProcessors();
     return pipeline;

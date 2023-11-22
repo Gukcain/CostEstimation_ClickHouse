@@ -124,8 +124,9 @@ void LocalConnection::sendQuery(
             if (num_threads > 1)
             {
                 // 改 2023-05-07
-                // state->pushing_async_executor = std::make_unique<PushingAsyncPipelineExecutor>(state->io.pipeline);
-                state->pushing_async_executor = std::make_unique<PushingPipelineExecutor>(state->io.pipeline);
+                // 回 2023-11-14
+                state->pushing_async_executor = std::make_unique<PushingAsyncPipelineExecutor>(state->io.pipeline);
+                // state->pushing_async_executor = std::make_unique<PushingPipelineExecutor>(state->io.pipeline);
                 state->pushing_async_executor->start();
                 state->block = state->pushing_async_executor->getHeader();
             }
@@ -150,8 +151,9 @@ void LocalConnection::sendQuery(
         {
             state->block = state->io.pipeline.getHeader();
             // 改 2023-05-07
-            // state->executor = std::make_unique<PullingAsyncPipelineExecutor>(state->io.pipeline);
-            state->executor = std::make_unique<PullingPipelineExecutor>(state->io.pipeline);
+            // 回 2023-11-14
+            state->executor = std::make_unique<PullingAsyncPipelineExecutor>(state->io.pipeline);
+            // state->executor = std::make_unique<PullingPipelineExecutor>(state->io.pipeline);
         }
         else if (state->io.pipeline.completed())
         {
